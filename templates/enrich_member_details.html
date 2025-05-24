@@ -1,0 +1,148 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="content-section">
+        <form method="POST" action="{{ url_for('enrich_member_details') }}">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Enrich Member KYC</legend>
+
+                <div class="form-group">
+                    {{ form.cmemberid.label(class="form-control-label") }}
+                    {% if form.cmemberid.errors %}
+                        {{ form.cmemberid(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cmemberid.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cmemberid(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.cname.label(class="form-control-label") }}
+                    {% if form.cname.errors %}
+                        {{ form.cname(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cname.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cname(class="form-control form-control-lg", readonly=True) }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.cpostadd.label(class="form-control-label") }}
+                    {% if form.cpostadd.errors %}
+                        {{ form.cpostadd(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cpostadd.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cpostadd(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.cpostcode.label(class="form-control-label") }}
+                    {% if form.cpostcode.errors %}
+                        {{ form.cpostcode(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cpostcode.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cpostcode(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.ccity.label(class="form-control-label") }}
+                    {% if form.ccity.errors %}
+                        {{ form.ccity(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.ccity.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.ccity(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.coccu.label(class="form-control-label") }}
+                    {% if form.coccu.errors %}
+                        {{ form.coccu(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.coccu.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.coccu(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.ccongr.label(class="form-control-label") }}
+                    {% if form.ccongr.errors %}
+                        {{ form.ccongr(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.ccongr.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.ccongr(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+                                <div class="form-group">
+				                    {{ form.cresd.label(class="form-control-label") }}
+				                    {% if form.cresd.errors %}
+				                        {{ form.cresd(class="form-control form-control-lg is-invalid") }}
+				                        <div class="invalid-feedback">
+				                            {% for error in form.cresd.errors %}
+				                                <span>{{ error }}</span>
+				                            {% endfor %}
+				                        </div>
+				                    {% else %}
+				                        {{ form.cresd(class="form-control form-control-lg") }}
+				                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.submit(class="btn btn-outline-success") }}
+                </div>
+            </fieldset>
+        </form>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script> <!-- Updated jQuery -->
+    <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script> <!-- Updated Popper.js -->
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script> <!-- Updated Bootstrap JS -->
+    <script>
+        // When the cmemberid field loses focus (via tab or enter), trigger the AJAX request
+        $('#{{ form.cmemberid.id }}').on('blur', function() {
+            var cmemberid = $(this).val();
+
+            // Make sure the member number is not empty
+            if (cmemberid) {
+                $.ajax({
+                    url: '/get_customer_name',  // Flask route to get customer name
+                    method: 'POST',
+                    data: { cmemberid: cmemberid },  // Send cmemberid as form data
+                    success: function(response) {
+                        // Populate the cname field with the customer name
+                        $('#{{ form.cname.id }}').val(response.cname);
+                    },
+                    error: function() {
+                        alert('Error retrieving customer name');
+                    }
+                });
+            }
+        });
+    </script>
+{% endblock content %}

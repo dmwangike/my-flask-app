@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="content-section">
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <legend>Loan Application</legend>
+
+            <div class="form-group">
+                {{ form.member_number.label }} {{ form.member_number(class="form-control", id="member_number") }}
+            </div>
+
+            <div class="form-group">
+                {{ form.member_name.label }} {{ form.member_name(class="form-control", id="member_name") }}
+            </div>
+
+            <div class="form-group">
+                {{ form.balance.label }} {{ form.balance(class="form-control", id="balance") }}
+            </div>
+
+            <div class="form-group">
+                {{ form.amount_borrowed.label }} {{ form.amount_borrowed(class="form-control") }}
+            </div>
+            <div class="form-group">
+                {{ form.loan_tenure.label }} {{ form.loan_tenure(class="form-control") }}
+            </div>
+
+            <h5>Guarantors</h5>
+            <table class="table" id="guarantor_table">
+                <thead>
+                    <tr>
+                        <th>Guarantor Number</th>
+                        <th>Guarantor Name</th>
+                        <th>Amount Guaranteed</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input type="text" name="guarantor_number_1" class="form-control guarantor-number"></td>
+                        <td><input type="text" name="guarantor_name_1" class="form-control" readonly></td>
+                        <td><input type="number" name="amount_guaranteed_1" step="0.01" class="form-control amount-guaranteed"></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2"><strong>Total Guaranteed</strong></td>
+                        <td><input type="text" class="form-control" id="total_guaranteed" readonly></td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            {{ form.submit(class="btn btn-primary") }}
+        </fieldset>
+    </form>
+</div>
+
+<script>
+document.getElementById('member_number').addEventListener('blur', function () {
+    fetch('/fetch_member_balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_number: this.value })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('member_name').value = data.cust_name || '';
+        document.getElementById('balance').value = data.balance || '';
+    });
+});
+
+function addGuarantorRow(index) {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+        <td><input type="text" name="guarantor_number_${index}" class="form-control guarantor-number"></td>
+        <td><input type="text" name="guarantor_name_${index}" class="form-control" readonly></td>
+        <td><input type="number" name="amount_guaranteed_${index}" step="0.01" class="form-control amount-guaranteed"></td>
+    `;
+    document.querySelector('#guarantor_table tbody').appendChild(row);
+}
+
+document.querySelector('#guarantor_table').addEventListener('input', function (e) {
+    if (e.target.matches('.guarantor-number')) {
+        const input = e.target;
+        const nameField = input.closest('tr').querySelector('input[name^="guarantor_name"]');
+        fetch('/fetch_guarantor_name', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ member_number: input.value })
+        })
+        .then(res => res.json())
+        .then(data => {
+            nameField.value = data.cust_name || '';
+        });
+    }
+
+    let total = 0;
+    document.querySelectorAll('.amount-guaranteed').forEach(el => {
+        total += parseFloat(el.value) || 0;
+    });
+    document.getElementById('total_guaranteed').value = total.toFixed(2);
+
+    // Add new row if last one is touched
+    const rows = document.querySelectorAll('#guarantor_table tbody tr');
+    const last = rows[rows.length - 1];
+    if ([...last.querySelectorAll('input')].some(input => input.value)) {
+        addGuarantorRow(rows.length + 1);
+    }
+});
+</script>
+{% endblock %}

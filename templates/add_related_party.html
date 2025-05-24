@@ -1,0 +1,141 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="content-section">
+    <form method="POST" action="{{ url_for('add_related_party') }}">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Add Related Party</legend>
+
+            <div class="form-group">
+                {{ form.cmemberid.label(class="form-control-label") }}
+                {% if form.cmemberid.errors %}
+                    {{ form.cmemberid(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.cmemberid.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.cmemberid(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.cname.label(class="form-control-label") }}
+                {% if form.cname.errors %}
+                    {{ form.cname(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.cname.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.cname(class="form-control form-control-lg", readonly=True) }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.rname.label(class="form-control-label") }}
+                {% if form.rname.errors %}
+                    {{ form.rname(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.rname.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.rname(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.ridentification.label(class="form-control-label") }}
+                {% if form.ridentification.errors %}
+                    {{ form.ridentification(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.ridentification.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.ridentification(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.rphone.label(class="form-control-label") }}
+                {% if form.rphone.errors %}
+                    {{ form.rphone(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.rphone.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.rphone(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+            <div class="form-group">
+                {{ form.remail.label(class="form-control-label") }}
+                {% if form.remail.errors %}
+                    {{ form.remail(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.remail.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.remail(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.rrole.label(class="form-control-label") }}
+                {% if form.rrole.errors %}
+                    {{ form.rrole(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.rrole.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.rrole(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.submit(class="btn btn-outline-success") }}
+            </div>
+        </fieldset>
+    </form>
+</div>
+    <script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script> <!-- Updated jQuery -->
+    <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script> <!-- Updated Popper.js -->
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script> <!-- Updated Bootstrap JS -->
+
+<script>
+    $('#{{ form.cmemberid.id }}').on('blur', function() {
+        var cmemberid = $(this).val();
+
+        // Make sure the cmemberid is not empty
+        if (cmemberid) {
+            $('#{{ form.cmemberid.id }}').addClass('loading'); // Add loading indicator
+            $.ajax({
+                url: '/get_edit_bnk_details',  // Flask route to get Customer Details
+                method: 'POST',
+                data: { cmemberid: cmemberid },  // Send cmemberid as form data
+                success: function(response) {
+                    // Populate fields
+                    $('#{{ form.cname.id }}').val(response.cname);
+
+                },
+                error: function(xhr, status, error) {
+                    alert('Error: ' + xhr.responseJSON?.error || 'Unable to retrieve customer details.');
+                },
+                complete: function() {
+                    $('#{{ form.cmemberid.id }}').removeClass('loading'); // Remove loading indicator
+                }
+            });
+        }
+    });
+</script>
+{% endblock content %}

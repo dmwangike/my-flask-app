@@ -1,0 +1,112 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="content-section">
+        <form method="POST" action="{{ url_for('queue_withdr') }}">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Queue Customer Withdrawal</legend>
+
+                <div class="form-group">
+                    {{ form.cuniqueid.label(class="form-control-label") }}
+                    {% if form.cuniqueid.errors %}
+                        {{ form.cuniqueid(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cuniqueid.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cuniqueid(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.ccustomer.label(class="form-control-label") }}
+                    {% if form.ccustomer.errors %}
+                        {{ form.ccustomer(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.ccustomer.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.ccustomer(class="form-control form-control-lg", readonly=True) }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.cbalance.label(class="form-control-label") }}
+                    {% if form.cbalance.errors %}
+                        {{ form.cbalance(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cbalance.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cbalance(class="form-control form-control-lg", readonly=True) }}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.camountw.label(class="form-control-label") }}
+                    {% if form.camountw.errors %}
+                        {{ form.camountw(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.camountw.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.camountw(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.cnarration.label(class="form-control-label") }}
+                    {% if form.cnarration.errors %}
+                        {{ form.cnarration(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cnarration.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cnarration(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.submit(class="btn btn-outline-success") }}
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    <script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script> <!-- Updated jQuery -->
+    <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script> <!-- Updated Popper.js -->
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script> <!-- Updated Bootstrap JS -->
+<script>
+    // When the cuniqueid field loses focus (via tab or enter), trigger the AJAX request
+    $('#{{ form.cuniqueid.id }}').on('blur', function() {
+        var cuniqueid = $(this).val();
+
+        // Make sure the cuniqueid is not empty
+        if (cuniqueid) {
+            $.ajax({
+                url: '/get_with_details',  // Flask route to get Account Details
+                method: 'POST',
+                data: { cuniqueid: cuniqueid },  // Send cuniqueid as form data
+                success: function(response) {
+                    // Populate the cbalance field
+                    $('#{{ form.cbalance.id }}').val(response.cbalance);
+
+                    // Populate the ccustomer field
+                    $('#{{ form.ccustomer.id }}').val(response.ccustomer);
+                },
+                error: function() {
+                    alert('Error retrieving Account details');
+                }
+            });
+        }
+    });
+</script>
+
+{% endblock content %}

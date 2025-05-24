@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="content-section">
+
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Annual Review Fees</legend>
+                 {% for post in posts %}
+				         <article class="media content-section">
+				           <div class="media-body">
+				             <div class="article-metadata">
+				               <a class="mr-2" href="#">{{ post.author }}</a>
+				               <small class="text-muted">{{ post.date_posted }}</small>
+				             </div>
+				             <h2><a class="article-title" href="#">{{ post.title }}</a></h2>
+				             <p class="article-content">{{ post.content }}</p>
+				           </div>
+				         </article>
+               {% endfor %}
+
+
+
+            </fieldset>
+            <div class="form-group">
+					<button
+						type="button"
+						class="btn btn-outline-success"
+						style="width: 300px;"
+						onclick="window.location.href='/arfassessment'">
+						Annual Review Fee Assessment
+					</button>
+			</div>
+            <div class="form-group">
+					<button
+						type="button"
+						class="btn btn-outline-success"
+						style="width: 300px;"
+						onclick="window.location.href='/arfcollection'">
+						Annual Review Fee Collection
+					</button>
+			</div>
+
+        </form>
+         <div >
+				    <form action="{{ url_for('execute_sql') }}" method="post">
+				                {{ form.hidden_tag() }}
+						<button type="submit" class="btn btn-outline-success" style="width: 300px;">Annual Review Fee Reversed</button>
+		            </form>
+		</div>
+    </div>
+
+{% endblock content %}

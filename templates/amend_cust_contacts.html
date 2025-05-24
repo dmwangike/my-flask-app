@@ -1,0 +1,163 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="content-section">
+    <form method="POST" action="{{ url_for('amend_cust_contacts') }}">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Update Members Contacts</legend>
+
+            <div class="form-group">
+                {{ form.cmemberid.label(class="form-control-label") }}
+                {% if form.cmemberid.errors %}
+                    {{ form.cmemberid(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.cmemberid.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.cmemberid(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.cname.label(class="form-control-label") }}
+                {% if form.cname.errors %}
+                    {{ form.cname(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.cname.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.cname(class="form-control form-control-lg", readonly=True) }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.ccustno.label(class="form-control-label") }}
+                {% if form.ccustno.errors %}
+                    {{ form.ccustno(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.ccustno.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.ccustno(class="form-control form-control-lg", readonly=True) }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.cphone.label(class="form-control-label") }}
+                {% if form.cphone.errors %}
+                    {{ form.cphone(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.cphone.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.cphone(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.cemail.label(class="form-control-label") }}
+                {% if form.cemail.errors %}
+                    {{ form.cemail(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.cemail.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.cemail(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.caddress.label(class="form-control-label") }}
+                {% if form.caddress.errors %}
+                    {{ form.caddress(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.caddress.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.caddress(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.czip.label(class="form-control-label") }}
+                {% if form.czip.errors %}
+                    {{ form.czip(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.czip.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.czip(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                {{ form.ccity.label(class="form-control-label") }}
+                {% if form.ccity.errors %}
+                    {{ form.ccity(class="form-control form-control-lg is-invalid") }}
+                    <div class="invalid-feedback">
+                        {% for error in form.ccity.errors %}
+                            <span>{{ error }}</span>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    {{ form.ccity(class="form-control form-control-lg") }}
+                {% endif %}
+            </div>
+
+
+            <div class="form-group">
+                {{ form.submit(class="btn btn-outline-success") }}
+            </div>
+        </fieldset>
+    </form>
+</div>
+    <script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script> <!-- Updated jQuery -->
+    <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script> <!-- Updated Popper.js -->
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script> <!-- Updated Bootstrap JS -->
+
+<script>
+    $('#{{ form.cmemberid.id }}').on('blur', function() {
+        var cmemberid = $(this).val();
+
+        // Make sure the cmemberid is not empty
+        if (cmemberid) {
+            $('#{{ form.cmemberid.id }}').addClass('loading'); // Add loading indicator
+            $.ajax({
+                url: '/get_amend_cust_contact',  // Flask route to get Customer Contact Details
+                method: 'POST',
+                data: { cmemberid: cmemberid },  // Send cmemberid as form data
+                success: function(response) {
+                    // Populate fields
+                    $('#{{ form.cname.id }}').val(response.cname);
+                    $('#{{ form.ccustno.id }}').val(response.ccustno);
+                    $('#{{ form.cphone.id }}').val(response.cphone);
+                    $('#{{ form.cemail.id }}').val(response.cemail);
+                    $('#{{ form.caddress.id }}').val(response.caddress);
+                    $('#{{ form.czip.id }}').val(response.czip);
+                    $('#{{ form.ccity.id }}').val(response.ccity);
+                },
+                error: function(xhr, status, error) {
+                    alert('Error: ' + xhr.responseJSON?.error || 'Unable to retrieve customer details.');
+                },
+                complete: function() {
+                    $('#{{ form.cmemberid.id }}').removeClass('loading'); // Remove loading indicator
+                }
+            });
+        }
+    });
+</script>
+{% endblock content %}

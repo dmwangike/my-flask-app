@@ -1,0 +1,8 @@
+CREATE TABLE holidays (
+    h_id SERIAL PRIMARY KEY,
+    start_date DATE NOT NULL,
+    end_date DATE ,
+    holiday VARCHAR(255),
+	created_by varchar(50),
+	created_on DATE
+);

@@ -1,0 +1,21 @@
+-- Table: public.update_audit
+
+-- DROP TABLE public.update_audit;
+
+CREATE TABLE IF NOT EXISTS public.update_audit
+(
+    id integer NOT NULL DEFAULT nextval('update_audit_id_seq'::regclass),
+    table_name text COLLATE pg_catalog."default" NOT NULL,
+    operation text COLLATE pg_catalog."default" NOT NULL,
+    old_values jsonb,
+    new_values jsonb,
+    windows_user text COLLATE pg_catalog."default",
+    ip_address text COLLATE pg_catalog."default",
+    transaction_time timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT update_audit_pkey PRIMARY KEY (id)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE public.update_audit
+    OWNER to postgres;

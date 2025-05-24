@@ -1,0 +1,84 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="content-section">
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Beneficiary Allocation</legend>
+
+            <div class="form-group">
+                {{ form.member_number.label(class="form-control-label") }}
+                {{ form.member_number(class="form-control", id="member_number") }}
+            </div>
+
+            <div class="form-group">
+                {{ form.member_name.label(class="form-control-label") }}
+                {{ form.member_name(class="form-control", id="member_name") }}
+            </div>
+
+            <h5>Beneficiaries</h5>
+            <table class="table" id="beneficiaries_table">
+                <thead>
+                    <tr>
+                        <th>Beneficiary ID</th>
+                        <th>Beneficiary Name</th>
+                        <th>Percentage</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2"><strong>Total</strong></td>
+                        <td><input type="text" class="form-control" id="total_percentage" readonly></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </fieldset>
+        <div class="form-group">
+            {{ form.submit(class="btn btn-outline-success") }}
+        </div>
+    </form>
+</div>
+
+<script>
+document.getElementById('member_number').addEventListener('blur', function () {
+    const memberNumber = this.value.trim();
+    if (!memberNumber) return;
+
+    fetch('/fetch_member', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ member_number: memberNumber })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+
+        document.getElementById('member_name').value = data.cust_name;
+        const tbody = document.querySelector('#beneficiaries_table tbody');
+        tbody.innerHTML = '';
+
+        data.parties.forEach(p => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td><input type="text" class="form-control" name="partyid_${p.party_id}" value="${p.party_id}" readonly></td>
+                <td><input type="text" class="form-control" name="partyname_${p.party_id}" value="${p.party_name}" readonly></td>
+                <td><input type="number" class="form-control percentage-input" name="percentage_${p.party_id}" step="0.01" min="0" max="100"></td>
+            `;
+            tbody.appendChild(row);
+        });
+    });
+});
+
+document.addEventListener('input', function () {
+    let total = 0;
+    document.querySelectorAll('.percentage-input').forEach(input => {
+        total += parseFloat(input.value) || 0;
+    });
+    document.getElementById('total_percentage').value = total.toFixed(2);
+});
+</script>
+{% endblock %}

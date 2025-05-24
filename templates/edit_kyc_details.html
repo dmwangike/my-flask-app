@@ -1,0 +1,125 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="content-section">
+        <form method="POST" action="{{ url_for('edit_kyc_details') }}">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Edit Member KYC Details</legend>
+
+                <div class="form-group">
+                    {{ form.cmemberid.label(class="form-control-label") }}
+                    {% if form.cmemberid.errors %}
+                        {{ form.cmemberid(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cmemberid.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cmemberid(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.cname.label(class="form-control-label") }}
+                    {% if form.cname.errors %}
+                        {{ form.cname(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cname.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cname(class="form-control form-control-lg", readonly=True) }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.ccustno.label(class="form-control-label") }}
+                    {% if form.ccustno.errors %}
+                        {{ form.ccustno(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.ccustno.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.ccustno(class="form-control form-control-lg", readonly=True) }}
+                    {% endif %}
+                </div>
+
+
+                <div class="form-group">
+                    {{ form.ctax.label(class="form-control-label") }}
+                    {% if form.ctax.errors %}
+                        {{ form.ctax(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.ctax.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.ctax(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.cstatus.label(class="form-control-label") }}
+                    {% if form.cstatus.errors %}
+                        {{ form.cstatus(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cstatus.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cstatus(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.submit(class="btn btn-outline-success") }}
+                </div>
+            </fieldset>
+        </form>
+    </div>
+    <script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script> <!-- Updated jQuery -->
+    <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script> <!-- Updated Popper.js -->
+    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script> <!-- Updated Bootstrap JS -->
+
+<script>
+    // When the cmemberid field loses focus (via tab or enter), trigger the AJAX request
+    $('#{{ form.cmemberid.id }}').on('blur', function() {
+        var cmemberid = $(this).val();
+
+        // Make sure the cmemberid is not empty
+        if (cmemberid) {
+            $.ajax({
+                url: '/get_edit_kyc_details',  //
+                method: 'POST',
+                data: { cmemberid: cmemberid },  // Send cmemberid as form data
+                success: function(response) {
+
+                    // Populate the cname field
+                    $('#{{ form.cname.id }}').val(response.cname);
+
+                    // Populate the ccustno field
+                    $('#{{ form.ccustno.id }}').val(response.ccustno);
+
+                    // Populate the ctax field
+                    $('#{{ form.ctax.id }}').val(response.ctax);
+
+                    // Populate the cstatus field
+                    $('#{{ form.cstatus.id }}').val(response.cstatus);
+
+
+
+                },
+                error: function() {
+                    alert('Error retrieving Customer details');
+                }
+            });
+        }
+    });
+</script>
+
+{% endblock content %}

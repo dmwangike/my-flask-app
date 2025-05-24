@@ -1,0 +1,51 @@
+-- Table: public.clients
+
+-- DROP TABLE public.clients;
+
+CREATE TABLE IF NOT EXISTS public.clients
+(
+    customer_id numeric,
+    cust_name text COLLATE pg_catalog."default",
+    ownership text COLLATE pg_catalog."default",
+    initialdep text COLLATE pg_catalog."default",
+    datejoined text COLLATE pg_catalog."default",
+    cust_acct text COLLATE pg_catalog."default",
+    cust_bank text COLLATE pg_catalog."default",
+    cust_branch text COLLATE pg_catalog."default",
+    dep_freq text COLLATE pg_catalog."default",
+    fund_source text COLLATE pg_catalog."default",
+    identification text COLLATE pg_catalog."default",
+    tax_cert text COLLATE pg_catalog."default",
+    pref_phone text COLLATE pg_catalog."default",
+    pref_email text COLLATE pg_catalog."default",
+    post_address text COLLATE pg_catalog."default",
+    post_code text COLLATE pg_catalog."default",
+    city text COLLATE pg_catalog."default",
+    date_of_birth text COLLATE pg_catalog."default",
+    gender text COLLATE pg_catalog."default",
+    civic_status text COLLATE pg_catalog."default",
+    kin_details text COLLATE pg_catalog."default",
+    occupation text COLLATE pg_catalog."default",
+    tax_exempt text COLLATE pg_catalog."default",
+    aml_risk text COLLATE pg_catalog."default",
+    pep_flg text COLLATE pg_catalog."default",
+    pep_level text COLLATE pg_catalog."default",
+    created_by text COLLATE pg_catalog."default",
+    date_modified text COLLATE pg_catalog."default",
+    modified_by text COLLATE pg_catalog."default"
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE public.clients
+    OWNER to postgres;
+
+-- Trigger: log_client_updates_trigger
+
+-- DROP TRIGGER log_client_updates_trigger ON public.clients;
+
+CREATE TRIGGER log_client_updates_trigger
+    AFTER UPDATE 
+    ON public.clients
+    FOR EACH ROW
+    EXECUTE FUNCTION public.log_client_updates();

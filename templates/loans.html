@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="content-section">
+
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Members Loan Processing</legend>
+            {% for post in posts %}
+                <article class="media content-section">
+                    <div class="media-body">
+                        <div class="article-metadata">
+                            <a class="mr-2" href="#">{{ post.author }}</a>
+                            <small class="text-muted">{{ post.date_posted }}</small>
+                        </div>
+                        <h2><a class="article-title" href="#">{{ post.title }}</a></h2>
+                        <p class="article-content">{{ post.content }}</p>
+                    </div>
+                </article>
+            {% endfor %}
+        </fieldset>
+
+
+        <div class="form-group">
+            <form action="{{ url_for('queue_withdr') }}" method="post">
+                {{ form.hidden_tag() }}
+                <button type="submit" class="btn btn-outline-success" style="width: 300px;">Queue Customer Request</button>
+            </form>
+        </div>
+        <div class="form-group">
+            <form action="{{ url_for('loan_form') }}" method="post">
+                {{ form.hidden_tag() }}
+                <button type="submit" class="btn btn-outline-success" style="width: 300px;">Loan Processing</button>
+            </form>
+        </div>
+
+    </div>
+
+{% endblock content %}

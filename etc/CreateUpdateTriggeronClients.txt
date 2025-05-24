@@ -1,0 +1,58 @@
+---Create Trigger Function
+
+
+CREATE OR REPLACE FUNCTION log_client_updates()
+RETURNS TRIGGER AS $$
+DECLARE
+    win_user TEXT;
+    user_ip TEXT;
+BEGIN
+    -- Fetch the application-level variables set by the Python app
+    win_user := current_setting('myapp.cust_mgr', true);  -- Manager name
+    user_ip := current_setting('myapp.client_ip', true);  -- Client IP address
+
+    -- Insert captured data into the audit table
+    INSERT INTO update_audit (
+        table_name,
+        operation,
+        old_values,
+        new_values,
+        windows_user,
+        ip_address,
+        transaction_time
+    )
+    VALUES (
+        TG_TABLE_NAME,                 -- Name of the table being updated
+        'UPDATE',                      -- Operation type
+        row_to_json(OLD)::JSONB,       -- Old row values
+        row_to_json(NEW)::JSONB,       -- New row values
+        win_user,                      -- Application-provided manager name
+        user_ip,                       -- Application-provided client IP
+        CURRENT_TIMESTAMP              -- Transaction timestamp
+    );
+
+    -- Return the new row to proceed with the update
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+--Create Trigger
+
+
+
+CREATE TRIGGER log_client_updates_trigger
+AFTER UPDATE ON clients
+FOR EACH ROW
+EXECUTE FUNCTION log_client_updates();
+
+
+
+
+
+CREATE TRIGGER log_htd_updates_trigger
+AFTER UPDATE ON clients
+FOR EACH ROW
+EXECUTE FUNCTION log_client_updates();

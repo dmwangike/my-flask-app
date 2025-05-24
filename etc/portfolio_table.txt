@@ -1,0 +1,17 @@
+-- Table: public.portfolio
+
+-- DROP TABLE public.portfolio;
+
+CREATE TABLE IF NOT EXISTS public.portfolio
+(
+    customer_id numeric,
+    account_no text COLLATE pg_catalog."default",
+    balance text COLLATE pg_catalog."default",
+    id text COLLATE pg_catalog."default",
+    open_date text COLLATE pg_catalog."default"
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE public.portfolio
+    OWNER to postgres;

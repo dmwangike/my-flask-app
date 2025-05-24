@@ -1,0 +1,26 @@
+select 
+TRAN_DATE "Trans Date",
+VALUE_DATE "Value Date",
+TRAN_ID "Reference No",
+TRAN_PARTICULAR "Transaction Details",
+ubacctranscounter,	
+case when TRANSACTIONAMOUNT < 0 THEN TRANSACTIONAMOUNT * -1 ELSE 0 END 	"Debit",
+case when TRANSACTIONAMOUNT >= 0 THEN TRANSACTIONAMOUNT  ELSE 0 END 	"Credit",
+RUNNINGBAL "Book Balance",
+CLEARED_BALANCE "Closing Cleared Balance",
+BOOKED_BALANCE "Closing Book Balance",
+FORACID "Account Number",	
+OPEN_BAL,
+STMT_NO "Statement Number",
+SOL_ID "Branch Code",
+ADDRESS_LINE1 "Address Line 1",
+SCHM_DESC "Account Description",
+SOL_DESC "Branch",
+ADDRESS_LINE2 "Address Line 2",
+ADDRESS_LINE3 "City",	
+ZIP "Postal Code",	
+ACCT_CRNCY_CODE "Currency",	
+PS_LAST_PRNT_TIME "Statement Period",
+PS_NEXT_DUE_DATE "Statement Date"	
+from mv_statement
+ORDER BY FORACID, UBACCTRANSCOUNTER

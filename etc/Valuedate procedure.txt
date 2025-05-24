@@ -1,0 +1,43 @@
+CREATE OR REPLACE PROCEDURE update_tran_date()
+LANGUAGE plpgsql AS $$
+DECLARE
+    rec RECORD;
+    next_working_day DATE;
+BEGIN
+    FOR rec IN
+        SELECT "TRAN_DATE", "VALUE_DATE", "PSTD_DATE"
+        FROM htd_stmt
+        WHERE "RECEIPT_STATUS" = 'N'
+    LOOP
+        -- Check if VALUE_DATE is greater than TRAN_DATE
+        IF rec."VALUE_DATE" > rec."TRAN_DATE" THEN
+            CONTINUE;
+        END IF;
+
+        -- Check if VALUE_DATE equals TRAN_DATE
+        IF rec."VALUE_DATE" = rec."TRAN_DATE" THEN
+            IF rec."PSTD_DATE"::timestamp:: time < '10:00:00' OR 
+               rec."PSTD_DATE"::timestamp:: time = '10:00:00' THEN
+                CONTINUE;
+            ELSE
+                -- Calculate the next working day
+                next_working_day := rec."TRAN_DATE"::date + 1;
+                WHILE EXTRACT(ISODOW FROM next_working_day) IN (6, 7) OR
+                      EXISTS (
+                          SELECT 1
+                          FROM holidays
+                          WHERE next_working_day BETWEEN start_date AND end_date
+                      )
+                LOOP
+                    next_working_day := next_working_day::date + 1;
+                END LOOP;
+
+                -- Update VALUE_DATE to the next working day
+                UPDATE htd_stmt
+                SET "VALUE_DATE" = next_working_day
+                WHERE "PSTD_DATE"::timestamp:: time > '10:00:00' AND "TRAN_DATE" = rec."TRAN_DATE" AND "VALUE_DATE" = rec."VALUE_DATE";
+            END IF;
+        END IF;
+    END LOOP;
+END;
+$$;

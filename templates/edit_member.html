@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="content-section">
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Edit Member Details</legend>
+            <div class="form-group">
+                <label for="page_selection">Choose a Menu:</label>
+                <select id="page_selection" name="page_selection" class="form-control" style="width: 300px;">
+                    <option value="amend_cust_contacts">Edit Member Contacts</option>
+                    <option value="edit_bnk_details">Edit Bank Details</option>
+                    <option value="edit_kyc_details">Edit Member KYC Details</option>
+                    <option value="add_related_party">Add Related Party</option>
+                    <option value="edit_related_party">Edit Related Party</option>
+                    <option value="assign_beneficiary_allocations">Assign Beneficiary Allocations</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-outline-success" style="width: 300px; margin-top: 10px;">Go</button>
+        </fieldset>
+    </form>
+    <div class="form-group" style="margin-top: 20px;">
+        <a href="{{ url_for('home') }}" class="btn btn-outline-success" style="width: 300px;">Back to Home</a>
+    </div>
+</div>
+{% endblock content %}
+

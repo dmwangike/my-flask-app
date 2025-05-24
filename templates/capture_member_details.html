@@ -1,0 +1,128 @@
+{% extends "layout.html" %}
+{% block content %}
+    <div class="content-section">
+        <form method="POST" action="">
+            {{ form.hidden_tag() }}
+            <fieldset class="form-group">
+                <legend class="border-bottom mb-4">Capture Member's Details</legend>
+
+                <div class="form-group">
+                    {{ form.cname.label(class="form-control-label") }}
+                    {% if form.cname.errors %}
+                        {{ form.cname(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cname.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cname(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+
+				   <div class="form-group">
+				                    {{ form.cuniqueid.label(class="form-control-label") }}
+				                    {% if form.cuniqueid.errors %}
+				                        {{ form.cuniqueid(class="form-control form-control-lg is-invalid") }}
+				                        <div class="invalid-feedback">
+				                            {% for error in form.cuniqueid.errors %}
+				                                <span>{{ error }}</span>
+				                            {% endfor %}
+				                        </div>
+				                    {% else %}
+				                        {{ form.cuniqueid(class="form-control form-control-lg") }}
+				                    {% endif %}
+                </div>
+				   <div class="form-group">
+				                    {{ form.ctaxid.label(class="form-control-label") }}
+				                    {% if form.ctaxid.errors %}
+				                        {{ form.ctaxid(class="form-control form-control-lg is-invalid") }}
+				                        <div class="invalid-feedback">
+				                            {% for error in form.ctaxid.errors %}
+				                                <span>{{ error }}</span>
+				                            {% endfor %}
+				                        </div>
+				                    {% else %}
+				                        {{ form.ctaxid(class="form-control form-control-lg") }}
+				                    {% endif %}
+                </div>
+				   <div class="form-group">
+				                    {{ form.ctax.label(class="form-control-label") }}
+				                    {% if form.ctax.errors %}
+				                        {{ form.ctax(class="form-control form-control-lg is-invalid") }}
+				                        <div class="invalid-feedback">
+				                            {% for error in form.ctax.errors %}
+				                                <span>{{ error }}</span>
+				                            {% endfor %}
+				                        </div>
+				                    {% else %}
+				                        {{ form.ctax(class="form-control form-control-lg") }}
+				                    {% endif %}
+                </div>
+
+				   <div class="form-group">
+				                    {{ form.cphone.label(class="form-control-label") }}
+				                    {% if form.cphone.errors %}
+				                        {{ form.cphone(class="form-control form-control-lg is-invalid") }}
+				                        <div class="invalid-feedback">
+				                            {% for error in form.cphone.errors %}
+				                                <span>{{ error }}</span>
+				                            {% endfor %}
+				                        </div>
+				                    {% else %}
+				                        {{ form.cphone(class="form-control form-control-lg") }}
+				                    {% endif %}
+                </div>
+				   <div class="form-group">
+				                    {{ form.cemail.label(class="form-control-label") }}
+				                    {% if form.cemail.errors %}
+				                        {{ form.cemail(class="form-control form-control-lg is-invalid") }}
+				                        <div class="invalid-feedback">
+				                            {% for error in form.cemail.errors %}
+				                                <span>{{ error }}</span>
+				                            {% endfor %}
+				                        </div>
+				                    {% else %}
+				                        {{ form.cemail(class="form-control form-control-lg") }}
+				                    {% endif %}
+                </div>
+
+<div class="form-group">
+                    {{ form.cdob.label(class="form-control-label") }}
+                    {% if form.cdob.errors %}
+                        {{ form.cdob(class="form-control form-control-lg is-invalid", type="date") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cdob.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cdob(class="form-control form-control-lg", type="date") }}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    {{ form.cgender.label(class="form-control-label") }}
+                    {% if form.cgender.errors %}
+                        {{ form.cgender(class="form-control form-control-lg is-invalid") }}
+                        <div class="invalid-feedback">
+                            {% for error in form.cgender.errors %}
+                                <span>{{ error }}</span>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.cgender(class="form-control form-control-lg") }}
+                    {% endif %}
+                </div>
+
+
+
+    </fieldset>
+            <div class="form-group">
+                {{ form.submit(class="btn btn-outline-success") }}
+            </div>
+
+        </form>
+    </div>
+
+{% endblock content %}

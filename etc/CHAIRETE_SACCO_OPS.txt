@@ -1,0 +1,330 @@
+alter table  clients add membership_number varchar(20);
+
+ALTER TABLE clients RENAME COLUMN customer_id TO member_id;
+
+create table members as 
+select member_id, membership_number,cust_name, gender, date_of_birth,identification,tax_cert,tax_exempt,pref_phone,
+pref_email,post_address, post_code, city, occupation,datejoined, dep_freq as membership_status,
+cust_acct, cust_bank,cust_branch,
+created_by,
+date_modified,modified_by
+from clients;
+create table related_party as 
+select member_id as related_party_id,membership_number,cust_name as member_name, gender,
+cust_name as related_party,pref_phone,
+pref_email from members;
+
+
+CREATE OR REPLACE FUNCTION generate_member_no()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.membership_number := 'M' || LPAD(NEW.member_id::TEXT, 4, '0');
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+CREATE TRIGGER set_member_no
+BEFORE INSERT ON members
+FOR EACH ROW
+EXECUTE FUNCTION generate_member_no();
+
+
+
+
+
+ALTER TABLE members
+ALTER COLUMN member_id TYPE INTEGER;
+
+
+
+
+
+select * from members
+CREATE SEQUENCE member_id_seq
+START WITH 1
+OWNED BY members.member_id;
+
+
+
+ALTER TABLE members
+ALTER COLUMN member_id SET DEFAULT nextval('member_id_seq');
+
+
+
+SELECT setval('member_id_seq', COALESCE((SELECT MAX(member_id) FROM members), 0));
+
+
+
+ALTER TABLE members
+ADD CONSTRAINT members_pkey PRIMARY KEY (member_id);
+
+
+
+
+alter table  portfolio add account_type varchar(20);
+
+alter table  portfolio add membership_number varchar(20);
+
+CREATE SEQUENCE port_id_seq
+START WITH 1
+OWNED BY portfolio.id;
+
+
+ALTER TABLE portfolio
+ALTER COLUMN id TYPE INTEGER USING id::INTEGER;
+
+
+
+
+
+ALTER TABLE portfolio
+ALTER COLUMN id SET DEFAULT nextval('port_id_seq');
+
+
+ALTER TABLE your_table_name
+ADD CONSTRAINT unique_identification UNIQUE (identification);
+
+
+
+
+CREATE TRIGGER log_client_updates_trigger
+AFTER UPDATE ON clients
+FOR EACH ROW
+EXECUTE FUNCTION log_client_updates();
+
+
+CREATE TABLE transactions (
+    trxid SERIAL PRIMARY KEY,  -- Auto-incrementing primary key
+    account_number VARCHAR(10) NOT NULL,
+    narrative VARCHAR(50),
+    amount NUMERIC(12, 2) NOT NULL,           -- Floating point with 2 decimal places
+    running_balance NUMERIC(12, 2) NOT NULL,  -- Same
+    entered_by VARCHAR(20) NOT NULL,
+    trans_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- Defaults to now
+);
+
+
+alter table  transactions add ipaddr varchar(50);
+
+
+
+ALTER TABLE transactions
+ADD COLUMN posted CHAR(1) DEFAULT 'N';
+
+
+
+
+
+CREATE TABLE related_party (
+    partyid SERIAL PRIMARY KEY,  -- Auto-incrementing primary key
+    membership_number VARCHAR(10) NOT NULL,
+    party_name VARCHAR(100)NOT NULL,
+	party_uniqueid VARCHAR(100)NOT NULL, 
+    party_phone VARCHAR(100),           
+    party_email VARCHAR(100),
+	party_role VARCHAR(100), 
+    party_status VARCHAR(20) NOT NULL,	
+    created_by VARCHAR(20) NOT NULL,
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- Defaults to now
+);
+
+
+
+
+CREATE TRIGGER log_party_updates_trigger
+AFTER UPDATE ON related_party
+FOR EACH ROW
+EXECUTE FUNCTION log_client_updates();
+
+
+
+
+   alter table related_party add modified_by varchar(20);
+  ALTER TABLE related_party
+ADD COLUMN date_modified DATE;
+
+
+
+ALTER TABLE related_party
+ALTER COLUMN date_modified
+TYPE TIMESTAMP;
+
+
+
+alter table  MEMBERS add Congregation varchar(30);
+
+alter table  MEMBERS add Residence varchar(30);
+
+
+ALTER TABLE RELATED_PARTY ADD PERCENTAGE NUMERIC;
+
+
+
+
+
+CREATE TABLE internal_accounts (
+    account_id SERIAL PRIMARY KEY,  -- Auto-incrementing primary key
+    account_name VARCHAR(20) NOT NULL,
+	account_number VARCHAR(10) NOT NULL,
+    balance NUMERIC(12, 2) NOT NULL,           
+
+    open_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- Defaults to now
+);
+
+
+
+
+
+
+CREATE TABLE loan_accounts (
+    loan_id SERIAL PRIMARY KEY,
+    loan_account VARCHAR(20),
+    member_loan_number NUMERIC,
+    member_number VARCHAR(10) NOT NULL,
+    amount_borrowed NUMERIC(12, 2) NOT NULL,
+    disbursement_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    tenure NUMERIC NOT NULL,
+    last_update_date TIMESTAMP,
+    pending_amount NUMERIC(12, 2) NOT NULL,
+    interest_rate NUMERIC(5, 2),
+    disbursed_by VARCHAR(10),
+    appraisal_fee NUMERIC(12, 2)
+);
+
+
+
+CREATE OR REPLACE FUNCTION set_loan_account_fields()
+RETURNS TRIGGER AS $$
+DECLARE
+    loan_count INTEGER;
+BEGIN
+    -- Count existing loans for this member to determine next member_loan_number
+    SELECT COUNT(*) + 1 INTO loan_count
+    FROM loan_accounts
+    WHERE member_number = NEW.member_number;
+
+    -- Set member_loan_number
+    NEW.member_loan_number := loan_count;
+
+    -- Set loan_account ID as 'member_number' || 'LN' || member_loan_number
+    NEW.loan_account := NEW.member_number || 'LN' || loan_count;
+
+    -- Set interest rate to 15%
+    NEW.interest_rate := 15.00;
+
+    -- Calculate appraisal fee as 0.5% of amount_borrowed
+    NEW.appraisal_fee := ROUND(NEW.amount_borrowed * -0.005, 2);
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+CREATE TRIGGER trg_set_loan_account_fields
+BEFORE INSERT ON loan_accounts
+FOR EACH ROW
+EXECUTE FUNCTION set_loan_account_fields();
+
+
+create table guarantors (id  SERIAL PRIMARY KEY,
+MEMBERSHIP_NUMBER varchar(20),
+loan_acct varchar(20), 
+AMOUNT_BORROWED numeric(12,2), 
+DISBURSEMENT_DATE timestamp, 
+GUARANTOR_NUMBER varchar(20), 
+AMOUNT_GUARANTEED numeric(12,2));
+
+
+
+
+alter table loan_accounts add loan_number varchar(20);
+
+
+
+
+
+
+CREATE OR REPLACE FUNCTION set_loan_number_after_insert()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE loan_accounts
+    SET loan_number = 'LN' || NEW.loan_id::text
+    WHERE loan_id = NEW.loan_id;
+
+    RETURN NULL; -- AFTER triggers must return NULL
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+
+CREATE TRIGGER set_loan_number_trigger
+AFTER INSERT ON loan_accounts
+FOR EACH ROW
+EXECUTE FUNCTION set_loan_number_after_insert();
+
+
+
+
+
+CREATE OR REPLACE FUNCTION set_loan_acct_on_guarantors()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Match loan from loan_accounts using three fields
+    SELECT loan_account INTO NEW.loan_acct
+    FROM loan_accounts
+    WHERE 
+        member_number = NEW.membership_number
+        AND amount_borrowed = NEW.amount_borrowed
+        AND disbursement_date::date = NEW.disbursement_date::date
+    LIMIT 1; -- In case multiple matches exist
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+
+CREATE TRIGGER trigger_set_loan_acct
+BEFORE INSERT ON guarantors
+FOR EACH ROW
+EXECUTE FUNCTION set_loan_acct_on_guarantors();
+
+
+
+
+
+CREATE TABLE interest_accounts (
+    id SERIAL PRIMARY KEY,
+    membership_number VARCHAR(10) NOT NULL,	
+	interest_account VARCHAR(20),
+    accrued_interest NUMERIC(12, 2) NOT NULL,
+    total_loan_interest NUMERIC(12, 2) NOT NULL,	
+    loan_account VARCHAR(20),
+    disbursement_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    amount_borrowed NUMERIC(12, 2) NOT NULL,
+    last_update_date TIMESTAMP,
+    interest_due NUMERIC(12, 2) NOT NULL);
+
+
+
+CREATE TABLE loan_schedules (
+    id SERIAL PRIMARY KEY,
+    instalment_number integer NOT NULL,
+    instalment_amount NUMERIC(12, 2) NOT NULL,
+    membership_number VARCHAR(10) NOT NULL,
+    due_date DATE,
+    status VARCHAR(20) DEFAULT 'Not Due',		
+    loan_account VARCHAR(20)
+);
+
+
+
+

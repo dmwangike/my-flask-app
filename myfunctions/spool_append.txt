@@ -1,0 +1,109 @@
+def  execute_sql():
+    conditions = ['01125084544600','02111084544600','01137084605700','01109405593300'] 
+    logging.debug("Conditions Captured...")
+    placeholders = parameterize_SQL_in_statement(conditions)
+    logging.debug("Placeholder created...")    
+    # SQL script to execute (ensure this is safe and sanitized)
+    sql_script = f"""SELECT ACCT_NAME BANK_NAME, FORACID BANK_ACCT, SOL_ID BANK_BR,ACCT_CLS_FLG CLOSE_FLAG, 
+        UNIQUEID AS CUST_ID, FREZ_CODE,STRUSERFIELD6 PEP_FLG, STRUSERFIELD7 PEPNAME, STRUSERFIELD8 PEP_ROLE FROM TBAADM.GAM@finstby
+        A JOIN CRMUSER.ACCOUNTS@finstby B ON A.CIF_ID = B.ORGKEY WHERE FORACID IN {placeholders}"""
+    conn = get_connection()
+    logging.debug("Connection Established...")    
+    # Create an Excel file on disk
+    df_oracle = pd.read_sql(sql_script, conn)
+    logging.debug("Dataframe Created...")    
+    today = datetime.today().strftime('%Y-%m-%d')
+    filename = f"C:\\Users\\dkamande\\oikonomos\\DATA\\acct_open_{today}.xlsx" 
+    #check_df.to_excel(filename, index=False, sheet_name='Data')
+
+    df_oracle.to_excel(filename, index=False, sheet_name='Data')
+    # Send the file to the client
+    flash('Extract successful. Please check location', 'secondary')
+    #return send_file(filename, as_attachment=True, download_name=f"data_{today}.xlsx", mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    return render_template('execute_sql.html', title='CUS', posts=post1)
+
+
+
+
+
+
+
+# Append the output to Excel
+"""
+def append_to_excel():
+    # Connect to the database
+    conn = get_db_connection()
+
+    # Define the SQL query
+    query = """
+    SELECT A.customer_id, account_no, cust_name, '', ownership, initialdep, datejoined,
+           cust_acct, cust_bank, cust_branch, dep_freq, fund_source, identification, tax_cert,
+           pref_phone, pref_email, post_address, post_code, city, date_of_birth, gender,
+           civic_status, kin_details, occupation, tax_exempt, '', aml_risk, pep_flg, pep_level, created_by
+    FROM portfolio A
+    JOIN clients B ON A.customer_id = B.customer_id
+    WHERE account_no LIKE 'CL%';
+    """
+    
+    # Read the query result into a DataFrame
+    df = pd.read_sql(query, conn)
+    
+    # Define the path to the Excel file
+    excel_path = r'C:\Users\dkamande\oikonomos\DATA\register.xlsx'
+    
+    # Check if the Excel file already exists
+    try:
+        # Open the workbook and append to it
+        book = load_workbook(excel_path)
+        writer = pd.ExcelWriter(excel_path, engine='openpyxl')
+        writer.book = book
+        df.to_excel(writer, index=False, sheet_name="Sheet1", header=False, startrow=book.active.max_row)
+        writer.save()
+        print("Data appended successfully to the Excel file.")
+    
+    except FileNotFoundError:
+        # If the file doesn't exist, create a new one and write the data
+        df.to_excel(excel_path, index=False, sheet_name="Sheet1")
+        print(f"Excel file created and data saved at {excel_path}.")
+    
+    # Close the database connection
+    db_connection.close()
+
+# Run the function
+append_to_excel()
+
+"""
+
+
+
+
+@app.route("/execute_sql", methods=['GET','POST'])
+def  execute_sql():
+    # Connect to the database
+    conn = get_db_connection()
+    query = """
+    with new_clients as (
+    select customer_id, cust_name, cust_acct,datejoined, identification,account_no,
+    ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY account_no desc) AS rwn from clients join 
+    portfolio using(customer_id)where datejoined = CURRENT_DATE)
+    SELECT * from new_clients where rwn = 1
+               """
+    
+    # Read data into a DataFrame
+    df = pd.read_sql(query, conn)
+    conn.close()
+    conditions = df['cust_acct'].tolist()
+    df_orc = fetch_oracle(conditions)
+    check_df = pd.merge(df, df_orc, how='left', left_on='cust_acct', right_on='foracid')
+
+
+    
+    # Create an Excel file on disk
+    today = datetime.today().strftime('%Y-%m-%d')
+    filename = f"C:\\Users\\dkamande\\oikonomos\\DATA\\acct_open_{today}.xlsx" 
+    check_df.to_excel(filename, index=False, sheet_name='Data')
+    #df.to_excel(filename, index=False, sheet_name='Data')
+    # Send the file to the client
+    return send_file(filename, as_attachment=True, download_name=f"data_{today}.xlsx", mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    
+    
