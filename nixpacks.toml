@@ -1,0 +1,5 @@
+[phases.setup]
+nixPkgs = ["python38", "gcc", "postgresql_16"]
+
+[start]
+cmd = "python app.py"
