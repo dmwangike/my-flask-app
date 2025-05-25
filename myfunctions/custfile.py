@@ -19,7 +19,6 @@ import cryptography as cy
 from cryptography.fernet import Fernet
 import pandas as pd
 import oracledb
-#oracledb.init_oracle_client(lib_dir="C:\\oracle\\product\\10.2.0\\client_1")
 oracledb.init_oracle_client(lib_dir="C:\\Program Files (x86)\\Oracle\\instantclient_19_11")
 from oracledb import create_pool,InterfaceError
 import psycopg2
@@ -28,6 +27,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 from decimal import Decimal
 from myfunctions.receipt import receipt_customer
+
 
 import re
 
@@ -115,79 +115,127 @@ def enrich_cust_details_logic():
             flash('Update Unsuccessful. Please check the details provided', 'secondary')
     return render_template('enrich_member_details.html', title='EMS', form=form)
 
-    
-# Update Transaction Details
+
+
 def update_trx_details_logic():
     form = UpdateTRXForm()
     regex = re.compile(r'[A-Za-z0-9 _-]+')
+
     if form.validate_on_submit():
         if regex.match(form.cmemberid.data):
             cust_name = form.cname.data
             cust_tranid = form.ctranid.data
-            cust_amount = form.camount.data
+            try:
+                cust_amount = Decimal(form.camount.data)
+            except:
+                flash("Invalid amount format. Please enter a valid number.", "danger")
+                return render_template('update_member_payment.html', title='MXP', form=form)
+
             cust_mgr = current_user.username
             client_ip = request.remote_addr
             cust_membid = form.cmemberid.data
-            # Connect to the DB
+
             logging.debug("Connecting to database...")
             conn = get_db_connection()
+            conn.autocommit = False  # Explicitly disable auto-commit
             cursor = conn.cursor()
-            cust_query = """
-            select balance,account_no from  portfolio where membership_number = %s
-            """
-            # Check if the customer ID exists
-            cursor.execute(cust_query, (cust_membid,))
-            existing_trx = cursor.fetchone()
-            
-            if existing_trx:
-                prev_balance = Decimal(existing_trx[0])
-                cust_acct = existing_trx[1]
-                new_bal = prev_balance + cust_amount
-            
-                # Check for duplicate transaction
-                duplicate_check_query = """
-                SELECT 1 FROM transactions
-                WHERE account_number = %s AND narrative = %s AND amount = %s
-                  AND entered_by = %s AND ipaddr = %s
-                LIMIT 1
+
+            try:
+                # Lock the portfolio row for update
+                cust_query = """
+                      SELECT a.balance AS cust_bal, a.account_no AS cust_acct,b.balance AS int_bal, b.account_number AS int_acct
+                      FROM portfolio a
+                      JOIN internal_accounts b ON b.account_number = '1006'
+                      WHERE a.membership_number = %s AND account_type = 'Savings'
+                      FOR UPDATE OF a, b;
                 """
-                cursor.execute(duplicate_check_query, (cust_acct, cust_tranid, cust_amount, cust_mgr, client_ip))
-                duplicate = cursor.fetchone()
-            
-                if duplicate:
-                    flash('Duplicate transaction detected. This transaction already exists.', 'warning')
+                cursor.execute(cust_query, (cust_membid,))
+                existing_trx = cursor.fetchone()
+
+                if existing_trx:
+                    prev_balance = Decimal(existing_trx[0])
+                    prev_int_bal = Decimal(existing_trx[2])
+                    cust_acct = existing_trx[1]
+                    int_acct = existing_trx[3]
+                    new_bal = prev_balance + cust_amount
+                    int_new_bal = prev_int_bal - cust_amount
+                    int_post = "Y"
+                    # Check for duplicate transaction
+                    duplicate_check_query = """
+                        SELECT 1 FROM transactions
+                        WHERE account_number = %s AND narrative = %s AND amount = %s
+                          AND entered_by = %s AND ipaddr = %s
+                        LIMIT 1
+                    """
+                    cursor.execute(duplicate_check_query, (
+                        cust_acct, cust_tranid, cust_amount, cust_mgr, client_ip
+                    ))
+                    duplicate = cursor.fetchone()
+
+                    if duplicate:
+                        flash('Duplicate transaction detected. This transaction already exists.', 'warning')
+                    else:
+                        # Insert new transaction: Customer leg
+                        insert_query = """
+                            INSERT INTO transactions 
+                            (account_number, narrative, amount, running_balance, entered_by, ipaddr)
+                            VALUES (%s, %s, %s, %s, %s, %s)
+                        """
+                        cursor.execute(insert_query, (
+                            cust_acct, cust_tranid, cust_amount, new_bal, cust_mgr, client_ip
+                        ))
+                        # Insert new transaction: Internal leg
+                        insert_query = """
+                            INSERT INTO transactions 
+                            (account_number, narrative, amount, running_balance, posted,entered_by, ipaddr)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        """
+                        cursor.execute(insert_query, (
+                            int_acct, cust_tranid, cust_amount * -1, int_new_bal,int_post,cust_mgr, client_ip
+                        ))
+
+                        # Update portfolio balance: Customer leg
+                        update_query = """
+                            UPDATE portfolio
+                            SET balance = %s
+                            WHERE account_no = %s
+                        """
+                        cursor.execute(update_query, (new_bal, cust_acct))
+
+                        # Update Internal balance: Internal Account leg
+                        update_query1 = """
+                            UPDATE internal_accounts
+                            SET balance = %s
+                            WHERE account_number = %s
+                        """
+                        cursor.execute(update_query1, (int_new_bal, int_acct))
+                        # Commit transaction
+                        conn.commit()
+
+                        # Generate receipt or confirmation
+                        receipt_customer()  # Make sure this function handles errors internally
+
+                        flash(f'Transaction for Member No {cust_membid} Updated Successfully!', 'success')
+
                 else:
-                    # SQL INSERT statement
-                    insert_query = """
-                    INSERT INTO transactions (account_number, narrative, amount, running_balance, entered_by, ipaddr)
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                    """
-                    cursor.execute(insert_query, (cust_acct, cust_tranid, cust_amount, new_bal, cust_mgr, client_ip))
-            
-                    # SQL UPDATE portfolio balance
-                    update_query = """
-                    UPDATE portfolio
-                    SET balance = %s
-                    WHERE account_no = %s
-                    """
-                    cursor.execute(update_query, (new_bal, cust_acct))
-            
-                    conn.commit()
-                    receipt_customer()
-                    flash(f'Transaction for Member No {cust_membid} Updated Successfully!', 'success')
-            else:
-                flash('Update failed! Member record not found.', 'error')
-            
-            cursor.close()
-            conn.close()
+                    flash('Update failed! Member record not found.', 'danger')
+
+            except Exception as e:
+                conn.rollback()
+                logging.exception("Transaction update failed:")
+                flash("An error occurred while processing the transaction. Please try again.", "danger")
+
+            finally:
+                cursor.close()
+                conn.close()
+
             return redirect(url_for('home'))
-   
         else:
-            logging.debug("Running Transaction update...")
-    return render_template('update_member_payment.html', title='MXP', form=form)    
-    
-    
-    
+            logging.debug("Regex validation failed for member ID.")
+            #flash('Invalid Member ID format.', 'danger')
+
+    return render_template('update_member_payment.html', title='MXP', form=form)
+  
  # Member Customer Details   
 
 
@@ -235,10 +283,12 @@ def capture_cust():
                     cust_id = int(result[0])
                     memb_id = result[1]
                     acct_id = f"{memb_id}_SV"
+                    acct_id2 = f"{memb_id}_DT"
                     acct_type = 'Savings'
+                    acct_type2 = 'Deposits'
                     cust_join = datetime.now()
                     rows_to_insert = [(cust_id, acct_id, 0, cust_join, memb_id, acct_type)]
- 
+                    rows_to_insert2 = [(cust_id, acct_id2, 0, cust_join, memb_id, acct_type2)] 
 
             
                     insert_portfolio_query = """
@@ -246,6 +296,11 @@ def capture_cust():
                     VALUES (%s, %s, %s, %s, %s, %s)
                     """
                     cursor.executemany(insert_portfolio_query, rows_to_insert)
+                    insert_portfolio_query2 = """
+                    INSERT INTO portfolio (customer_id, account_no, balance, open_date, membership_number, account_type)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    """
+                    cursor.executemany(insert_portfolio_query, rows_to_insert2)
             
                     conn.commit()
 

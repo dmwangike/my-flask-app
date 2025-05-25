@@ -119,9 +119,9 @@ def generate_receipt(customer):
     width, height = landscape(letter)
 
     # Add company logo at the top-left corner
-    logo_path = "7.jpg"
+    logo_path = "logo.png"
     try:
-        c.drawImage(logo_path, 50, height - 100, width=100, height=50, mask='auto')
+        c.drawImage(logo_path, 50, height - 100, width=100, height=100, mask='auto')
     except Exception as e:
         logging.debug(f"Error loading logo: {e}")
 
@@ -131,17 +131,15 @@ def generate_receipt(customer):
     c.drawRightString(width - 50, height - 60, "PCEA CHAIRETE SACCO")
     c.setFont("Helvetica", 12)
     c.setFillColor(colors.black)
-    c.drawRightString(width - 50, height - 80, "Co-operative House, 5th Floor")
-    c.drawRightString(width - 50, height - 95, "Haile Selassie Avenue")
-    c.drawRightString(width - 50, height - 110, "P.O. Box 48231 - 00100, Nairobi")
-    c.drawRightString(width - 50, height - 125, "Tel: +254 020 3276416")
-    c.drawRightString(width - 50, height - 140, "Email: co-optrust@co-opbank.co.ke")
-    c.drawRightString(width - 50, height - 155, "Website: www.co-opbank.co.ke")
+    c.drawRightString(width - 50, height - 80, "PCEA MACEDONIA CHURCH")
+    c.drawRightString(width - 50, height - 95, "ONGATA RONGAI")
+    c.drawRightString(width - 50, height - 110, "P.O. Box 28 - 00511, Nairobi")
+    c.drawRightString(width - 50, height - 140, "Email: pceabarakaparish@yahoo.com")
     
     # Add the date below the company logo
     current_date = datetime.now().strftime("%Y-%m-%d")
     c.setFont("Helvetica", 10)
-    c.drawString(50, height - 120, f"Date: {current_date}")
+    c.drawString(50, height - 120, f" {current_date}")
 
     # Add receipt header
     c.setFont("Helvetica-Bold", 16)

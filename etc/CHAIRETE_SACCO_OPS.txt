@@ -327,4 +327,6 @@ CREATE TABLE loan_schedules (
 
 
 
+ALTER TABLE transactions ADD CONSTRAINT unique_trx_entry
+UNIQUE (account_number, narrative, amount, entered_by, ipaddr);
 

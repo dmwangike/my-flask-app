@@ -35,7 +35,7 @@ class MembershipLetterGenerator:
             query = (
              "select account_no as \"ACCOUNT NUMBER\", cust_name as \"NAME\", membership_number as \"MEMBER NUMBER\", "
             "post_code as \"Code\", city as \"City\" from members m join portfolio  p using(membership_number) "
-            "where  member_id = %s"
+            "where  account_type = 'Savings' and member_id = %s"
             )
             cursor.execute(query,(self.cust_id,))
             rows = cursor.fetchall()

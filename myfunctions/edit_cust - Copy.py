@@ -30,7 +30,6 @@ import calendar
 import re
 
 from openpyxl import load_workbook
-from decimal import Decimal
 
 
 import os,shutil
@@ -667,193 +666,129 @@ def fetch_member_balance_logic():
     else:
         return jsonify({"error": "Member not found"}), 404
         
+        
+
+
 
 
 
 def loan_form_logic():
     form = LoanForm()
-    conn = None
-    cur = None
 
     if form.validate_on_submit():
-        try:
-            member_number = form.member_number.data
-            amount_borrowed = Decimal(form.amount_borrowed.data)
-            disbursement_date = datetime.now()
-            loan_tenure = form.loan_tenure.data
-            last_update_date = datetime.now()
-            pending_amount = -amount_borrowed
-            cust_mgr = current_user.username
-            client_ip = request.remote_addr
-            int_post = "Y"
+        member_number = form.member_number.data
+        amount_borrowed = form.amount_borrowed.data
+        disbursement_date = datetime.now()
+        loan_tenure = form.loan_tenure.data
+        last_update_date = datetime.now()
+        pending_amount = amount_borrowed * -1
+        cust_mgr = current_user.username
 
-            conn = get_db_connection()
-            conn.autocommit = False  # Explicit commit required
-            cur = conn.cursor()
+        conn = get_db_connection()
+        cur = conn.cursor()
 
-            # Lock necessary internal accounts
-            cur.execute("""
-                SELECT account_number, balance
-                FROM internal_accounts
-                WHERE account_number IN ('1001', '1002', '1006')
-                FOR UPDATE;
-            """)
-            acct_1001_number = acct_1002_number = acct_1006_number = None
-            acct_1001_balance = acct_1002_balance = acct_1006_balance = None
-            for account_number, balance in cur.fetchall():
-                if account_number == '1001':
-                    acct_1001_number = account_number
-                    acct_1001_balance = balance
-                elif account_number == '1002':
-                    acct_1002_number = account_number
-                    acct_1002_balance = balance
-                elif account_number == '1006':
-                    acct_1006_number = account_number
-                    acct_1006_balance = balance
+        # 1) Insert into loan_accounts
+        cur.execute("""
+            INSERT INTO loan_accounts (
+                member_number, amount_borrowed, tenure, last_update_date,
+                pending_amount, disbursed_by, disbursement_date
+            )
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (member_number, pending_amount, loan_tenure, last_update_date,
+              pending_amount, cust_mgr, disbursement_date))
 
-            # Lock portfolio (savings) balance
-            cur.execute("""
-                SELECT balance, account_no 
-                FROM portfolio 
-                WHERE account_type = 'Savings' AND membership_number = %s
-                FOR UPDATE;
-            """, (member_number,))
-            existing_trx2 = cur.fetchone()
-            if not existing_trx2:
-                flash("No savings portfolio found for member.", "danger")
-                conn.rollback()
-                return render_template("loan_form.html", form=form)
+        # 2) Update loan_contra_accounts
+        cur.execute("""
+            UPDATE internal_accounts
+            SET balance = balance + %s
+            WHERE account_number = '1001'
+        """, (amount_borrowed,))
 
-            prev_balance2 = Decimal(existing_trx2[0])
-            cust_acct2 = existing_trx2[1]
-            new_bal2 = prev_balance2 + amount_borrowed
+        # 3) Insert guarantors
+        for key in request.form:
+            if key.startswith("guarantor_number_"):
+                suffix = key.split("_")[-1]
+                guarantor_number = request.form.get(f"guarantor_number_{suffix}")
+                amount_guaranteed = request.form.get(f"amount_guaranteed_{suffix}")
+                if guarantor_number and amount_guaranteed:
+                    try:
+                        cur.execute("""
+                            INSERT INTO guarantors (
+                                membership_number, amount_borrowed, disbursement_date,
+                                guarantor_number, amount_guaranteed
+                            )
+                            VALUES (%s, %s, %s, %s, %s)
+                        """, (member_number, amount_borrowed, disbursement_date,
+                              guarantor_number, float(amount_guaranteed)))
+                    except ValueError:
+                        continue
 
-            # Duplicate loan check
-            cur.execute("""
-                SELECT 1 FROM loan_accounts
-                WHERE member_number = %s AND amount_borrowed = %s AND tenure = %s
-                  AND last_update_date::DATE = %s AND pending_amount = %s
-                  AND disbursed_by = %s AND disbursement_date::DATE = %s
-                LIMIT 1
-            """, (member_number, pending_amount, loan_tenure, last_update_date.date(),
-                  pending_amount, cust_mgr, disbursement_date.date()))
+        # 4) Capture loan account details
+        cur.execute("""
+            SELECT loan_account, member_loan_number, appraisal_fee 
+            FROM loan_accounts 
+            WHERE disbursement_date::date = CURRENT_DATE AND member_number = %s
+        """, (member_number,))
+        result = cur.fetchone()
 
-            if cur.fetchone():
-                flash("Duplicate loan record detected.", "warning")
-                conn.rollback()
-                return render_template("loan_form.html", form=form)
-
-            # Insert into loan_accounts
-            cur.execute("""
-                INSERT INTO loan_accounts (
-                    member_number, amount_borrowed, tenure, last_update_date,
-                    pending_amount, disbursed_by, disbursement_date
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (member_number, pending_amount, loan_tenure, last_update_date,
-                  pending_amount, cust_mgr, disbursement_date))
-
-            # Guarantors
-            for key in request.form:
-                if key.startswith("guarantor_number_"):
-                    suffix = key.split("_")[-1]
-                    guarantor_number = request.form.get(f"guarantor_number_{suffix}")
-                    amount_guaranteed = request.form.get(f"amount_guaranteed_{suffix}")
-                    if guarantor_number and amount_guaranteed:
-                        try:
-                            cur.execute("""
-                                INSERT INTO guarantors (
-                                    membership_number, amount_borrowed, disbursement_date,
-                                    guarantor_number, amount_guaranteed
-                                ) VALUES (%s, %s, %s, %s, %s)
-                            """, (member_number, amount_borrowed, disbursement_date,
-                                  guarantor_number, float(amount_guaranteed)))
-                        except ValueError:
-                            continue
-
-            # Fetch loan details
-            cur.execute("""
-                SELECT loan_account, member_loan_number, appraisal_fee 
-                FROM loan_accounts 
-                WHERE disbursement_date::DATE = CURRENT_DATE AND member_number = %s
-            """, (member_number,))
-            result = cur.fetchone()
-            if not result:
-                raise Exception("Loan account could not be retrieved.")
+        if result:
             loan_account, member_loan_number, appraisal_fee = result
+        else:
+            loan_account = member_loan_number = appraisal_fee = None
 
-            # Create interest account
-            int_acct = f"{member_number}INT{member_loan_number}"
-            disbursed_amount = amount_borrowed - appraisal_fee
-            new_bal3 = prev_balance2 + amount_borrowed - appraisal_fee
-            loan_drawdown_acct = f"{loan_account}_Drawdown"
-            loan_disbursement_acct = f"{loan_account}_Disbursement"
-            loan_appraisal_acct = f"{loan_account}_Appraisal_fee"
+        # 5) Create interest and disbursement variables
+        int_acct = f"{member_number}INT{member_loan_number}"
+        disbursed_amount = amount_borrowed - appraisal_fee
 
-            # Insert into interest_accounts
+        # 6) Insert into interest table
+        cur.execute("""
+            INSERT INTO INTEREST_ACCOUNTS (
+                membership_number, interest_account, accrued_interest,
+                total_loan_interest, loan_account, amount_borrowed,
+                last_update_date, interest_due
+            ) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        """, (member_number, int_acct, 0, 0, loan_account, amount_borrowed,
+              last_update_date, 0))
+
+        # 7) Update appraisal account
+        cur.execute("""
+            UPDATE internal_accounts
+            SET balance = balance + %s
+            WHERE account_number = '1002'
+        """, (appraisal_fee,))
+
+        # 8) Generate and insert loan schedules with due_date
+        def end_of_month(year, month):
+            day = calendar.monthrange(year, month)[1]
+            return datetime(year, month, day).date()
+
+        instalment_amount = round(amount_borrowed / loan_tenure, 2)
+        current_month = disbursement_date.month
+        current_year = disbursement_date.year
+
+        for i in range(loan_tenure):
+            # Calculate the correct month/year for each installment
+            month = current_month + i
+            year = current_year + (month - 1) // 12
+            month = (month - 1) % 12 + 1
+
+            due_date = end_of_month(year, month)
+
             cur.execute("""
-                INSERT INTO INTEREST_ACCOUNTS (
-                    membership_number, interest_account, accrued_interest,
-                    total_loan_interest, loan_account, amount_borrowed,
-                    last_update_date, interest_due
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (member_number, int_acct, 0, 0, loan_account, amount_borrowed,
-                  last_update_date, 0))
+                INSERT INTO loan_schedules (
+                    instalment_number, instalment_amount, membership_number,
+                    loan_account, due_date
+                )
+                VALUES (%s, %s, %s, %s, %s)
+            """, (i + 1, instalment_amount, member_number, loan_account, due_date))
 
-            # Insert transactions
-            trx_insert = """
-                INSERT INTO transactions 
-                (account_number, narrative, amount, running_balance, posted, entered_by, ipaddr)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
-            cur.execute(trx_insert, (loan_account, 'Loan Disbursement', pending_amount, pending_amount, int_post, cust_mgr, client_ip))
-            cur.execute(trx_insert, (cust_acct2, loan_drawdown_acct, amount_borrowed, new_bal2, int_post, cust_mgr, client_ip))
-            cur.execute(trx_insert, (cust_acct2, loan_appraisal_acct, -appraisal_fee, new_bal3, int_post, cust_mgr, client_ip))
-            cur.execute(trx_insert, (acct_1002_number, loan_account, appraisal_fee, acct_1002_balance + appraisal_fee, int_post, cust_mgr, client_ip))
-            cur.execute(trx_insert, (cust_acct2, loan_disbursement_acct, -disbursed_amount, prev_balance2, int_post, cust_mgr, client_ip))
-            cur.execute(trx_insert, (acct_1006_number, loan_disbursement_acct, disbursed_amount, acct_1006_balance + disbursed_amount, int_post, cust_mgr, client_ip))
+        # Finalize transaction
+        conn.commit()
+        cur.close()
+        conn.close()
 
-            # Update internal accounts
-            cur.execute("UPDATE internal_accounts SET balance = balance + %s WHERE account_number = '1002'", (appraisal_fee,))
-            cur.execute("UPDATE internal_accounts SET balance = balance + %s WHERE account_number = '1001'", (amount_borrowed,))
-
-            # Create loan schedule
-            def end_of_month(year, month):
-                day = calendar.monthrange(year, month)[1]
-                return datetime(year, month, day).date()
-
-            instalment_amount = round(amount_borrowed / loan_tenure, 2)
-            current_month = disbursement_date.month
-            current_year = disbursement_date.year
-
-            for i in range(loan_tenure):
-                month = current_month + i
-                year = current_year + (month - 1) // 12
-                month = (month - 1) % 12 + 1
-                due_date = end_of_month(year, month)
-                cur.execute("""
-                    INSERT INTO loan_schedules (
-                        instalment_number, instalment_amount, membership_number,
-                        loan_account, due_date
-                    )
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (i + 1, instalment_amount, member_number, loan_account, due_date))
-
-            # Finalize
-            conn.commit()
-            flash("Loan disbursed successfully with repayment schedule!", "success")
-            return redirect(url_for("home"))
-
-        except Exception as e:
-            if conn:
-                conn.rollback()
-            logging.exception("Loan processing failed.")
-            flash("An error occurred during loan processing. Please try again.", "danger")
-
-        finally:
-            if cur:
-                cur.close()
-            if conn:
-                conn.close()
+        flash("Loan disbursed successfully with repayment schedule!", "success")
+        return redirect(url_for("home"))
 
     return render_template("loan_form.html", form=form)
-
