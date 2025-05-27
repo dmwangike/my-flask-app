@@ -18,9 +18,9 @@ from Runpy import sqlparse
 import cryptography as cy
 from cryptography.fernet import Fernet
 import pandas as pd
-import oracledb
-oracledb.init_oracle_client(lib_dir="C:\\Program Files (x86)\\Oracle\\instantclient_19_11")
-from oracledb import create_pool,InterfaceError
+#import oracledb
+#oracledb.init_oracle_client(lib_dir="C:\\Program Files (x86)\\Oracle\\instantclient_19_11")
+#from oracledb import create_pool,InterfaceError
 import psycopg2
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -35,7 +35,7 @@ from decimal import Decimal
 
 import os,shutil
 import sys
-import paramiko
+#import paramiko
 from base64 import decodebytes
 import zipfile
 
@@ -653,7 +653,7 @@ def fetch_member_balance_logic():
     cur.execute("""
         SELECT A.MEMBERSHIP_NUMBER, A.CUST_NAME, B.BALANCE
         FROM MEMBERS A JOIN PORTFOLIO B USING(MEMBERSHIP_NUMBER)
-        WHERE A.MEMBERSHIP_NUMBER = %s
+        WHERE B.ACCOUNT_TYPE = 'Savings' AND A.MEMBERSHIP_NUMBER = %s
     """, (member_number,))
     row = cur.fetchone()
     cur.close()
@@ -815,7 +815,7 @@ def loan_form_logic():
             # Update internal accounts
             cur.execute("UPDATE internal_accounts SET balance = balance + %s WHERE account_number = '1002'", (appraisal_fee,))
             cur.execute("UPDATE internal_accounts SET balance = balance + %s WHERE account_number = '1001'", (amount_borrowed,))
-
+            cur.execute("UPDATE internal_accounts SET balance = balance + %s WHERE account_number = '1006'", (disbursed_amount,))
             # Create loan schedule
             def end_of_month(year, month):
                 day = calendar.monthrange(year, month)[1]

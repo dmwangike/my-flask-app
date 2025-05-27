@@ -231,9 +231,10 @@ class EnrichForm(FlaskForm):
         'CONGREGATION',
         validators=[DataRequired()],
         choices=[
-            ('congregation1', 'Congregation1'),
-            ('congregation2', 'Congregation2'),
-            ('congregation3', 'Congregation3'),            
+            ('upendo', 'Upendo'),
+            ('nkaimurunya', 'Nkaimurunya'),
+            ('ongata', 'Ongata'),            
+            ('macedonia', 'Macedonia'), 
             ('others', 'Others')
         ],
         coerce=str  # Ensures the selected value is returned as a string

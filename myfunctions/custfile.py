@@ -18,9 +18,9 @@ from Runpy import sqlparse
 import cryptography as cy
 from cryptography.fernet import Fernet
 import pandas as pd
-import oracledb
-oracledb.init_oracle_client(lib_dir="C:\\Program Files (x86)\\Oracle\\instantclient_19_11")
-from oracledb import create_pool,InterfaceError
+#import oracledb
+#oracledb.init_oracle_client(lib_dir="C:\\Program Files (x86)\\Oracle\\instantclient_19_11")
+#from oracledb import create_pool,InterfaceError
 import psycopg2
 from psycopg2 import errors
 import logging
@@ -36,7 +36,7 @@ from openpyxl import load_workbook
 
 import os,shutil
 import sys
-import paramiko
+#import paramiko
 from base64 import decodebytes
 import zipfile
 
@@ -122,7 +122,8 @@ def update_trx_details_logic():
     regex = re.compile(r'[A-Za-z0-9 _-]+')
 
     if form.validate_on_submit():
-        if regex.match(form.cmemberid.data):
+        #if regex.match(form.cmemberid.data):
+        if form.cmemberid.data and regex.match(form.cmemberid.data):
             cust_name = form.cname.data
             cust_tranid = form.ctranid.data
             try:

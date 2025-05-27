@@ -34,17 +34,17 @@ from jinjasql import JinjaSql
 import cryptography as cy
 from cryptography.fernet import Fernet
 import pandas as pd
-import oracledb
-from oracledb import create_pool,InterfaceError
+#import oracledb
+#from oracledb import create_pool,InterfaceError
 
-oracledb.init_oracle_client(lib_dir="C:\\Program Files (x86)\\Oracle\\instantclient_19_11")
+#oracledb.init_oracle_client(lib_dir="C:\\Program Files (x86)\\Oracle\\instantclient_19_11")
 import psycopg2
 import logging
 logging.basicConfig(level=logging.DEBUG)
 import re
 import os,shutil
 import sys
-import paramiko
+#import paramiko
 from base64 import decodebytes
 import zipfile
 
