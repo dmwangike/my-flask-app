@@ -30,7 +30,7 @@ openpyxl==3.1.5
 packaging==25.0
 pandas==2.2.3
 pillow==11.2.1
-psycopg2==2.9.10
+psycopg2-binary
 pycparser==2.22
 python-dateutil==2.9.0.post0
 pytz==2025.2
