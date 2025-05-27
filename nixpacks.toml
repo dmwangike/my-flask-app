@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["python38", "gcc", "postgresql_16"]
+nixPkgs = ["python313", "gcc", "postgresql_16"]
 
 [start]
 cmd = "python app.py"
