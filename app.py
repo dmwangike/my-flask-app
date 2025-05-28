@@ -81,13 +81,13 @@ mail = Mail(app)
 
 
 # List of allowed IPs
-ALLOWED_IPS = {'127.0.0.1','192.168.100.243', '203.0.113.5'}  # Replace with your allowed IPs
+#ALLOWED_IPS = {'127.0.0.1','192.168.100.243', '203.0.113.5'}  # Replace with your allowed IPs
 
-@app.before_request
-def limit_remote_addr():
-    client_ip = request.remote_addr
-    if client_ip not in ALLOWED_IPS:
-        abort(403)  # Forbidden
+#@app.before_request
+#def limit_remote_addr():
+#    client_ip = request.remote_addr
+#    if client_ip not in ALLOWED_IPS:
+#        abort(403)  # Forbidden
 
 posts = [
     {
