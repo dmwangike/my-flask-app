@@ -41,7 +41,7 @@ from base64 import decodebytes
 import zipfile
 
 
-
+"""
 #CREATE THE DATABASE CONNECTION
 def get_db_connection():
     try:
@@ -56,6 +56,21 @@ def get_db_connection():
     except Exception as e:
         print(f"Error connecting to the database: {e}")
         return None
+"""       
+def get_db_connection():
+    try:
+        conn = psycopg2.connect(
+            host='switchyard.proxy.rlwy.net',
+            database='railway',
+            user='postgres',
+            password='SetMrVNKCaThIproHaFQTBlRjLCiKwHU',
+            port='25459'
+        )
+        return conn
+    except Exception as e:
+        print(f" Error connecting to Railway DB: {e}")
+        return None
+
 
 
 
