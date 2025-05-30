@@ -6,6 +6,8 @@
 #                                                       #
 #########################################################
 # SET UP THE ENVIRONMENT
+from dotenv import load_dotenv
+load_dotenv()
 from flask import Flask, render_template, url_for, flash, redirect,request,jsonify,send_file, make_response,abort, current_app 
 from datetime import datetime, timedelta
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -683,73 +685,7 @@ def cust_address():
         return render_template('home.html', posts=posts)
 
 
-@app.route("/upload_data", methods=['POST'])
-@login_required 
-def upload_data(): 
-        host = 'localhost'
-        port = '5432'
-        username = 'postgres'
-        password = '12345'
-        database = 'postgres'
-        
-        # Create the connection string
-        connection_string = f'postgresql+psycopg2://{username}:{password}@{host}:{port}/{database}'
-    
-        # Create SQLAlchemy engine
-        engine = create_engine(connection_string)
-        
-        logging.debug("Acquired Postgres connection...")
-        postgres_query = """
-            SELECT max("TRAN_DATE") as tran_date, max("UBACCTRANSCOUNTER") as ubacctranscounter,"FORACID","ACID"
-            FROM HTD_STMT
-            GROUP BY "FORACID","ACID"
-            """
-        postgres_df = pd.read_sql( postgres_query, engine)
-        logging.debug("Created Postgres dataframe...")
-        acctid_list = postgres_df['ACID'].tolist()
-        for acctid in acctid_list:
-        
-        
-            # Filter the dataframe based on the current acctid
-            acid_df = postgres_df[postgres_df['ACID'] == acctid]
-            
-            # Check if the dataframe is empty
-            if acid_df.empty:
-                print(f"No data found for ACID: {acctid}")
-                continue  # Skip to the next iteration if no data is found
-            
-            # Use .iloc[0] to access the first row by position, not by index
-            tran_date_value = acid_df.iloc[0]['tran_date']
-            ubacctrx_value = acid_df.iloc[0]['ubacctranscounter']
-            acid_value = acid_df.iloc[0]['ACID']
-            
-            # SQL script construction
-            sql_script = f"""
-            with EODBAL as (select * from tbaadm.eab@finstby where acid = '{acid_value}' and EOD_DATE = TO_DATE('{tran_date_value}','YYYY-MM-DD HH24:MI:SS'))
-            SELECT ACID, TRAN_DATE, VALUE_DATE, PSTD_DATE, TRAN_ID||'_'||PART_TRAN_SRL_NUM as TRAN_ID, USER_PART_TRAN_CODE as TRAN_CODE, TO_CHAR(PSTD_DATE, 'YYMMDDHH24MISS') || TRIM(TRAN_ID) || TRIM(PART_TRAN_SRL_NUM) || ACID AS TRAN_RID, 
-                   trim(translate(TRAN_PARTICULAR, chr(10)||chr(11)||chr(13), ' ')) AS TRAN_PARTICULAR, ENTRY_USER_ID as PSTD_USER_ID, TRAN_CRNCY_CODE, DTH_INIT_SOL_ID, B.BANK_ID as BANK_ID,
-                   {ubacctrx_value} + ROW_NUMBER() OVER(PARTITION BY ACID ORDER BY PSTD_DATE) AS UBACCTRANSCOUNTER, 
-                   case when PART_TRAN_TYPE = 'D' then TRAN_AMT * -1 ELSE TRAN_AMT END AS TRANSACTIONAMOUNT,
-                   TRAN_DATE_BAL + SUM(case when PART_TRAN_TYPE = 'D' then TRAN_AMT * -1 ELSE TRAN_AMT END) over(partition by ACID order by PSTD_DATE)
-            RUNNINGBAL,  TO_DATE('{tran_date_value}','YYYY-MM-DD HH24:MI:SS')  EODDATE, FORACID, TRUNC(SYSDATE) PROCESS_DATE,
-            REGEXP_REPLACE(REGEXP_REPLACE(REGEXP_SUBSTR(UPPER(TRAN_PARTICULAR),'(BF|CL)[O0-9 ]+'),'O',0),' ', '') AS CLIENT_ID,
-            REGEXP_SUBSTR(TRAN_PARTICULAR, '254[0-9]+', 1, 1) AS PHONENO, 'N' as RECEIPT_STATUS
-            from TBAADM.GAM@finstby A join TBAADM.HTD@finstby B using(ACID) 
-            join EODBAL C using (ACID)
-            where ACID = '{acid_value}' and B.TRAN_DATE > TO_DATE('{tran_date_value}','YYYY-MM-DD HH24:MI:SS') 
-            AND B.DEL_FLG = 'N' AND B.PSTD_FLG = 'Y'
-            """
-            
-            # Execute the SQL query and save the result to an Excel file
-            conn = get_connection()
-            logging.debug("Acquired Oracle connection...")
-            df = pd.read_sql(sql_script, conn)
-            conn.close()
-            logging.debug("Created Oracle dataframe...")
-            df.to_sql('htd_stmt', engine, if_exists='append', index=False)
-            flash('Data Upload executed successfully. Review logs for details.', 'success')
-        return render_template('home.html', posts=posts)
-            
+
 @login_manager.user_loader
 def load_user(user_id):
     connection = get_db_connection()

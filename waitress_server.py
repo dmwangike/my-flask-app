@@ -1,5 +1,5 @@
 from waitress import serve
-from oikonomos import app
+from app import app
 
 
 

@@ -5,6 +5,8 @@
 #########################################################
 
 #import Libraries
+from dotenv import load_dotenv
+load_dotenv()
 import pandas as pd
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -36,16 +38,17 @@ BASE_PDF_OUTPUT_DIR = 'E:\\oikonomos\\DATA'
 def get_db_connection():
     try:
         conn = psycopg2.connect(
-            host='localhost',
-            database='postgres',
-            user='postgres',
-            password='12345',
-            port ='5432'
+            host=os.environ.get('PGHOST'),
+            database=os.environ.get('PGDATABASE'),
+            user=os.environ.get('PGUSER'),
+            password=os.environ.get('PGPASSWORD'),
+            port=os.environ.get('PGPORT')
         )
         return conn
     except Exception as e:
-        print(f"Error connecting to the database: {e}")
+        print(f"Error connecting to Railway DB: {e}")
         return None
+
 
 # FUNCTION TO LOG EVENTS
 def log_event(message):

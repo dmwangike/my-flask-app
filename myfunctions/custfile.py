@@ -5,6 +5,8 @@
 # for PCEA CHAIRETE SACCO			        #
 #########################################################
 # SET UP THE ENVIRONMENT
+from dotenv import load_dotenv
+load_dotenv()
 from flask_login import current_user, login_required
 from flask import Flask, render_template, url_for, flash, redirect,request,jsonify,send_file
 from datetime import datetime
@@ -18,9 +20,6 @@ from Runpy import sqlparse
 import cryptography as cy
 from cryptography.fernet import Fernet
 import pandas as pd
-#import oracledb
-#oracledb.init_oracle_client(lib_dir="C:\\Program Files (x86)\\Oracle\\instantclient_19_11")
-#from oracledb import create_pool,InterfaceError
 import psycopg2
 from psycopg2 import errors
 import logging
@@ -43,35 +42,20 @@ import zipfile
 
 """
 #CREATE THE DATABASE CONNECTION
+
 def get_db_connection():
     try:
         conn = psycopg2.connect(
-            host='localhost',
-            database='postgres',
-            user='postgres',
-            password='12345',
-            port ='5432'
+            host=os.environ.get('PGHOST'),
+            database=os.environ.get('PGDATABASE'),
+            user=os.environ.get('PGUSER'),
+            password=os.environ.get('PGPASSWORD'),
+            port=os.environ.get('PGPORT')
         )
         return conn
     except Exception as e:
-        print(f"Error connecting to the database: {e}")
+        print(f"Error connecting to Railway DB: {e}")
         return None
-"""       
-def get_db_connection():
-    try:
-        conn = psycopg2.connect(
-            host='switchyard.proxy.rlwy.net',
-            database='railway',
-            user='postgres',
-            password='SetMrVNKCaThIproHaFQTBlRjLCiKwHU',
-            port='25459'
-        )
-        return conn
-    except Exception as e:
-        print(f" Error connecting to Railway DB: {e}")
-        return None
-
-
 
 
 # Populate the KYC Details for a Member
@@ -86,8 +70,6 @@ def enrich_cust_details_logic():
             cust_postcode = form.cpostcode.data.upper()
             cust_city = form.ccity.data.upper()
             cust_occu = form.coccu.data.upper()
-            cust_congr = form.ccongr.data            
-            cust_resd = form.cresd.data.upper()            
             mod_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             #cust_mgr = os.getlogin()
             cust_mgr = current_user.username
@@ -107,13 +89,13 @@ def enrich_cust_details_logic():
                 # SQL UPDATE statement
                 update_query = """
                 UPDATE MEMBERS
-                SET post_address = %s, post_code = %s,city= %s, occupation = %s, date_modified = %s,modified_by = %s, congregation = %s,residence = %s
+                SET post_address = %s, post_code = %s,city= %s, occupation = %s, date_modified = %s,modified_by = %s
                 WHERE MEMBERSHIP_NUMBER = %s
                 """
                 cursor.execute(f"SET myapp.cust_mgr = '{cust_mgr}';") 
                 cursor.execute(f"SET myapp.client_ip = '{client_ip}';")                
                 # Execute the update statement
-                cursor.execute(update_query, (cust_postadd,cust_postcode,cust_city, cust_occu, mod_date,cust_mgr,cust_congr,cust_resd,cust_memid))
+                cursor.execute(update_query, (cust_postadd,cust_postcode,cust_city, cust_occu, mod_date,cust_mgr,cust_memid))
                 
                 # Commit the transaction
                 conn.commit()
@@ -129,7 +111,6 @@ def enrich_cust_details_logic():
         else:
             flash('Update Unsuccessful. Please check the details provided', 'secondary')
     return render_template('enrich_member_details.html', title='EMS', form=form)
-
 
 
 def update_trx_details_logic():

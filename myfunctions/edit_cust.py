@@ -5,6 +5,8 @@
 # for PCEA CHAIRETE SACCO				#
 #########################################################
 # SET UP THE ENVIRONMENT
+from dotenv import load_dotenv
+load_dotenv()
 from flask_login import current_user, login_required
 from flask import Flask, render_template, url_for, flash, redirect,request,jsonify,send_file
 from datetime import datetime
@@ -46,15 +48,15 @@ import zipfile
 def get_db_connection():
     try:
         conn = psycopg2.connect(
-            host='localhost',
-            database='postgres',
-            user='postgres',
-            password='12345',
-            port ='5432'
+            host=os.environ.get('PGHOST'),
+            database=os.environ.get('PGDATABASE'),
+            user=os.environ.get('PGUSER'),
+            password=os.environ.get('PGPASSWORD'),
+            port=os.environ.get('PGPORT')
         )
         return conn
     except Exception as e:
-        print(f"Error connecting to the database: {e}")
+        print(f"Error connecting to Railway DB: {e}")
         return None
 
 
