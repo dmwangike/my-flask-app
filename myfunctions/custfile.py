@@ -40,7 +40,6 @@ from base64 import decodebytes
 import zipfile
 
 
-"""
 #CREATE THE DATABASE CONNECTION
 
 def get_db_connection():
