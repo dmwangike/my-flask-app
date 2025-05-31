@@ -7,6 +7,9 @@ load_dotenv()
 
 import urllib.parse as urlparse
 
+
+import logging
+
 def get_db_connection():
     try:
         db_url = os.environ.get('DATABASE_URL')
@@ -52,127 +55,137 @@ class MembershipLetterGenerator:
             if connection:
                 connection.close()
 
+
     def generate_pdf(self, data):
-        output_directory = "/tmp/DATA"
-        if not os.path.exists(output_directory):
-            os.makedirs(output_directory)
+        try:
+            output_directory = "/tmp/DATA"
+            os.makedirs(output_directory, exist_ok=True)
 
-        for row in data:
-            pdf = FPDF()
-            pdf.add_page()
+            for row in data:
+                pdf = FPDF()
+                pdf.add_page()
 
-            # Add a Unicode-capable font (e.g., using the Times New Roman or any other font with Unicode support)
-            pdf.add_font('Times', '', 'C:\\Windows\\Fonts\\times.ttf', uni=True)  # Ensure the font supports Unicode
-            pdf.set_font("Times", size=9)
+                # Use a built-in, Unicode-capable font
+                pdf.set_font("Arial", size=9)
 
-            # Dimensions for the table
-            page_width = 210  
-            margin = 10
-            table_width = page_width - 2 * margin  
-            column_width = table_width / 3  
-            table_y = 10  
-            table_height = 70  
+                # Dimensions for the table
+                page_width = 210  
+                margin = 10
+                table_width = page_width - 2 * margin  
+                column_width = table_width / 3  
+                table_y = 10  
+                table_height = 70  
 
-            # First column: Logo
-            logo_x = margin
-            logo_y = table_y
-            logo_width = column_width
-            logo_height = table_height
-            pdf.image("logo.png", x=logo_x, y=logo_y, w=logo_width, h=logo_height)
+                # First column: Logo
+                logo_x = margin
+                logo_y = table_y
+                logo_width = column_width
+                logo_height = table_height
 
-            # Second column: Empty 
-            pdf.set_xy(margin + column_width, table_y)
-            pdf.cell(column_width, table_height, "", border=0)
+                try:
+                    logo_path = os.path.join("static", "logo.png")  # Ensure logo is deployed
+                    pdf.image(logo_path, x=logo_x, y=logo_y, w=logo_width, h=logo_height)
+                except RuntimeError:
+                    logging.warning("Logo image not found, skipping logo insertion.")
 
-            # Third column: Organizational address
-            address_x = margin + 2 * column_width
-            pdf.set_xy(address_x, table_y)
+                # Second column: Empty
+                pdf.set_xy(margin + column_width, table_y)
+                pdf.cell(column_width, table_height, "", border=0)
 
-            # Organizational Address 
-            pdf.set_font("Times", style="B", size=9)
-            pdf.multi_cell(column_width, 5, ("PCEA CHAIRETE SACCO\n"
-                "PCEA MACEDONIA CHURCH\n"
-                "ONGATA RONGAI\n"
-                "P.O. Box 28 - 00511, Nairobi\n"
-                "Email: pceabarakaparish@yahoo.com\n"
-                                             ), align="L")
+                # Third column: Address
+                address_x = margin + 2 * column_width
+                pdf.set_xy(address_x, table_y)
+                pdf.set_font("Arial", style="B", size=9)
+                pdf.multi_cell(column_width, 5, (
+                    "PCEA CHAIRETE SACCO\n"
+                    "PCEA MACEDONIA CHURCH\n"
+                    "ONGATA RONGAI\n"
+                    "P.O. Box 28 - 00511, Nairobi\n"
+                    "Email: pceabarakaparish@yahoo.com"
+                ), align="L")
 
-            # Current Date
-            pdf.set_y(table_y + table_height + 5)
-            current_date = datetime.now().strftime("%B %d, %Y")
-            pdf.cell(0, 5, current_date, ln=True)
+                # Current date
+                pdf.set_y(table_y + table_height + 5)
+                current_date = datetime.now().strftime("%B %d, %Y")
+                pdf.set_font("Arial", size=9)
+                pdf.cell(0, 5, current_date, ln=True)
 
-            # Recipient Details
-            name = row.get("NAME") or ""
-            address = row.get("MEMBER NUMBER") or ""
-            code = row.get("Code") or ""
-            city = row.get("City") or ""
+                # Recipient info
+                name = row.get("NAME", "")
+                address = row.get("MEMBER NUMBER", "")
+                code = row.get("Code", "")
+                city = row.get("City", "")
 
-            pdf.ln(5)
-            pdf.cell(0, 5, name, ln=True)
-            pdf.cell(0, 5, f"{address} - {code}", ln=True)
-            pdf.cell(0, 5, city, ln=True)
+                pdf.ln(5)
+                pdf.cell(0, 5, name, ln=True)
+                pdf.cell(0, 5, f"{address} - {code}", ln=True)
+                pdf.cell(0, 5, city, ln=True)
 
-            # Salutation
-            pdf.ln(5)
-            pdf.set_font("Times", size=12)
-            pdf.cell(0, 5, "Dear Member,", ln=True)
+                # Salutation and body
+                pdf.ln(5)
+                pdf.set_font("Arial", size=12)
+                pdf.cell(0, 5, "Dear Member,", ln=True)
 
-            # Reference
-            pdf.ln(3)           
-            pdf.set_font("Times", style="BU", size=12)
-            pdf.cell(0, 5, "RE: MEMBERSHIP CONFIRMATION", ln=True)
+                pdf.ln(3)
+                pdf.set_font("Arial", style="BU", size=12)
+                pdf.cell(0, 5, "RE: MEMBERSHIP CONFIRMATION", ln=True)
 
-            # Paragraph
-            pdf.ln(3)  
-            pdf.set_font("Times", size=12)
-            pdf.multi_cell(0, 5, (
-            "Thank you for choosing PCEA CHAIRETE SACCO as your preferred investment partner. "
-            "You can count on our commitment to serve you. Your account details "
-            "are as indicated below:\n"
-             ))
-            pdf.ln(3)  
-            pdf.set_font("Times", size=12)
-            pdf.multi_cell(0, 5, (
-            f"Account Name: {name}\n"
-            f"Account Number: {row.get('ACCOUNT NUMBER') or ''}"
-             ))
-            pdf.ln(3)  
-            pdf.set_font("Times", size=12)
-            pdf.multi_cell(0, 5, (
-            f"Please indicate your member number {row.get('MEMBER NUMBER') or ''} for all transactions and instructions."
-            "For any top ups kindly use the PCEA CHAIRETE SACCO with Co-op Bank "
-            "Ongata Rongai Branch, A/c No. 01134211013100 or Mpesa Paybill number 400222 and "
-            f"the account number is  412673#{row.get('MEMBER NUMBER') or ''}."
-             ))
-            pdf.ln(3)  
-            pdf.set_font("Times", size=12)
-            pdf.multi_cell(0, 5, (
-            "For other requests, kindly send your request to pceabarakaparish@yahoo.com "
-            f" also indicating your member number  {row.get('MEMBER NUMBER') or ''}."
-             ))  
-               
-            # Sign-off
-            pdf.ln(5)
-            pdf.cell(0, 5, "Yours faithfully,", ln=True)
+                pdf.ln(3)
+                pdf.set_font("Arial", size=12)
+                pdf.multi_cell(0, 5, (
+                    "Thank you for choosing PCEA CHAIRETE SACCO as your preferred investment partner. "
+                    "You can count on our commitment to serve you. Your account details "
+                    "are as indicated below:\n"
+                ))
 
-            # Insert stamp (7 cm × 2 cm)
-            stamp_width = 70  # in mm
-            stamp_height = 20  # in mm
-            pdf.image("logo.png", x=10, y=pdf.get_y() + 5, w=stamp_width, h=stamp_height)
- 
-            pdf.ln(stamp_height + 15) # Add a small vertical space before the line
-            pdf.set_line_width(0.5)  # Set line width
-            pdf.line(pdf.get_x(), pdf.get_y(), pdf.w - 10, pdf.get_y())  # Draw a line           
+                pdf.ln(3)
+                pdf.multi_cell(0, 5, (
+                    f"Account Name: {name}\n"
+                    f"Account Number: {row.get('ACCOUNT NUMBER', '')}"
+                ))
 
-            # Footer
- 
-            pdf.set_y(-45)
-            pdf.set_font("Times",style="B", size=8) 
-            pdf.cell(0, 5, "Growing Together", ln=True, align='C')            
-            # Save PDF
-            member_number = row.get("MEMBER NUMBER") or "unknown"
-            pdf.output(f"{output_directory}\\{member_number}.pdf")
+                pdf.ln(3)
+                pdf.multi_cell(0, 5, (
+                    f"Please indicate your member number {address} for all transactions and instructions. "
+                    "For any top ups kindly use the PCEA CHAIRETE SACCO with Co-op Bank "
+                    "Ongata Rongai Branch, A/c No. 01134211013100 or Mpesa Paybill number 400222 and "
+                    f"the account number is 412673#{address}."
+                ))
+
+                pdf.ln(3)
+                pdf.multi_cell(0, 5, (
+                    "For other requests, kindly send your request to pceabarakaparish@yahoo.com "
+                    f"also indicating your member number {address}."
+                ))
+
+                pdf.ln(5)
+                pdf.cell(0, 5, "Yours faithfully,", ln=True)
+
+                # Stamp
+                try:
+                    stamp_width = 70
+                    stamp_height = 20
+                    pdf.image(logo_path, x=10, y=pdf.get_y() + 5, w=stamp_width, h=stamp_height)
+                except RuntimeError:
+                    logging.warning("Stamp logo image not found, skipping stamp.")
+
+                pdf.ln(stamp_height + 15)
+                pdf.set_line_width(0.5)
+                pdf.line(pdf.get_x(), pdf.get_y(), pdf.w - 10, pdf.get_y())
+
+                # Footer
+                pdf.set_y(-45)
+                pdf.set_font("Arial", style="B", size=8)
+                pdf.cell(0, 5, "Growing Together", ln=True, align='C')
+
+                # Save PDF
+                member_number = address or "unknown"
+                output_path = os.path.join(output_directory, f"{member_number}.pdf")
+                pdf.output(output_path)
+
+        except Exception as e:
+            logging.exception("Unexpected error occurred during PDF generation.")
+
 
 #if __name__ == "__main__":
 
