@@ -51,19 +51,19 @@ from reportlab.platypus import Table, TableStyle
 
 from reportlab.lib.pagesizes import landscape, letter
 
+import urllib.parse as urlparse
 
 def get_db_connection():
     try:
-        conn = psycopg2.connect(
-            host=os.environ.get('PGHOST'),
-            database=os.environ.get('PGDATABASE'),
-            user=os.environ.get('PGUSER'),
-            password=os.environ.get('PGPASSWORD'),
-            port=os.environ.get('PGPORT')
-        )
+        db_url = os.environ.get('DATABASE_URL')
+        if not db_url:
+            raise ValueError("DATABASE_URL is not set in environment variables")
+
+        # Parse the connection string (optional: psycopg2 can handle full URL directly)
+        conn = psycopg2.connect(db_url)
         return conn
     except Exception as e:
-        print(f"Error connecting to Railway DB: {e}")
+        print(f"Error connecting to Railway DB via DATABASE_URL: {e}")
         return None
 
 

@@ -19,7 +19,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 import psycopg2
 from flask import Flask, render_template, url_for, flash, redirect,request,jsonify,send_file, make_response
-
+import urllib.parse as urlparse
 
 
    
@@ -37,17 +37,17 @@ BASE_PDF_OUTPUT_DIR = 'E:\\oikonomos\\DATA'
 #CREATE THE DATABASE CONNECTION
 def get_db_connection():
     try:
-        conn = psycopg2.connect(
-            host=os.environ.get('PGHOST'),
-            database=os.environ.get('PGDATABASE'),
-            user=os.environ.get('PGUSER'),
-            password=os.environ.get('PGPASSWORD'),
-            port=os.environ.get('PGPORT')
-        )
+        db_url = os.environ.get('DATABASE_URL')
+        if not db_url:
+            raise ValueError("DATABASE_URL is not set in environment variables")
+
+        # Parse the connection string (optional: psycopg2 can handle full URL directly)
+        conn = psycopg2.connect(db_url)
         return conn
     except Exception as e:
-        print(f"Error connecting to Railway DB: {e}")
+        print(f"Error connecting to Railway DB via DATABASE_URL: {e}")
         return None
+        
 
 
 # FUNCTION TO LOG EVENTS
