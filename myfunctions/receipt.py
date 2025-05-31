@@ -71,7 +71,7 @@ def get_db_connection():
 
 
 #Create the Spool Path
-WELCOME_DIR = "E:\\oikonomos\\DATA"
+WELCOME_DIR = "/tmp/DATA"
 os.makedirs(WELCOME_DIR, exist_ok=True)
 
 

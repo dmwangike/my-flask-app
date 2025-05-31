@@ -53,7 +53,7 @@ class MembershipLetterGenerator:
                 connection.close()
 
     def generate_pdf(self, data):
-        output_directory = "E:\\oikonomos\\DATA"
+        output_directory = "/tmp/DATA"
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)
 

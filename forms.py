@@ -7,19 +7,23 @@ from decimal import Decimal
 
 
    
-def get_db_connect():
+import os
+import psycopg2
+import urllib.parse as urlparse
+
+def get_db_connection():
     try:
-        conn = psycopg2.connect(
-            host='localhost',
-            database='postgres',
-            user='postgres',
-            password='12345',
-            port ='5432'
-        )
+        db_url = os.environ.get('DATABASE_URL')
+        if not db_url:
+            raise ValueError("DATABASE_URL is not set in environment variables")
+
+        # Parse the connection string (optional: psycopg2 can handle full URL directly)
+        conn = psycopg2.connect(db_url)
         return conn
     except Exception as e:
-        print(f"Error connecting to the database: {e}")
-        return None    
+        print(f"Error connecting to Railway DB via DATABASE_URL: {e}")
+        return None
+ 
  
 class LoanForm(FlaskForm):
     member_number = StringField('Member Number', validators=[DataRequired()])

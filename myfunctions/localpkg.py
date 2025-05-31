@@ -24,15 +24,15 @@ import urllib.parse as urlparse
 
    
 # Define the Base directory for output files
-base_directory = r"E:\oikonomos\DATA"
+base_directory = "/tmp/DATA"
 
 
 
 #  DEFINE The FILE TO LOG EVENTS
-LOG_FILE = 'E:\\oikonomos\\logs\\execution_log.txt'
+LOG_FILE = '/tmp/DATA/execution_log.txt'
 
 # Base path to save PDFs
-BASE_PDF_OUTPUT_DIR = 'E:\\oikonomos\\DATA'
+BASE_PDF_OUTPUT_DIR = '/tmp/DATA'
 
 #CREATE THE DATABASE CONNECTION
 def get_db_connection():
