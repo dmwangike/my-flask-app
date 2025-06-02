@@ -60,34 +60,34 @@ class MembershipLetterGenerator:
         try:
             output_directory = "/tmp/DATA"
             os.makedirs(output_directory, exist_ok=True)
-    
+
             for row in data:
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.set_font("Arial", size=9)
-    
+
                 page_width = 210
                 margin = 10
                 table_width = page_width - 2 * margin
                 column_width = table_width / 3
                 table_y = 10
                 table_height = 70
-    
+
                 # First column: Logo
                 logo_x = margin
                 logo_y = table_y
                 logo_width = column_width
                 logo_height = table_height
+                logo_path = os.path.join("static", "logo.png")
                 try:
-                    logo_path = os.path.join("static", "logo.png")
                     pdf.image(logo_path, x=logo_x, y=logo_y, w=logo_width, h=logo_height)
                 except RuntimeError:
                     logging.warning("Logo image not found, skipping logo insertion.")
-    
+
                 # Empty second column
                 pdf.set_xy(margin + column_width, table_y)
                 pdf.cell(column_width, table_height, "", border=0)
-    
+
                 # Third column: Address
                 address_x = margin + 2 * column_width
                 pdf.set_xy(address_x, table_y)
@@ -99,33 +99,33 @@ class MembershipLetterGenerator:
                     "P.O. Box 28 - 00511, Nairobi\n"
                     "Email: pceabarakaparish@yahoo.com"
                 ), align="L")
-    
+
                 # Current date
                 pdf.set_y(table_y + table_height + 5)
                 current_date = datetime.now().strftime("%B %d, %Y")
                 pdf.set_font("Arial", size=9)
                 pdf.cell(0, 5, current_date, ln=True)
-    
+
                 # Recipient info
                 name = row.get("NAME", "")
                 member_number = row.get("MEMBER NUMBER", "")
                 code = row.get("Code", "")
                 city = row.get("City", "")
-    
+
                 pdf.ln(5)
                 pdf.cell(0, 5, name, ln=True)
                 pdf.cell(0, 5, f"{member_number} - {code}", ln=True)
                 pdf.cell(0, 5, city, ln=True)
-    
+
                 # Salutation and body
                 pdf.ln(5)
                 pdf.set_font("Arial", size=12)
                 pdf.cell(0, 5, "Dear Member,", ln=True)
-    
+
                 pdf.ln(3)
                 pdf.set_font("Arial", style="BU", size=12)
                 pdf.cell(0, 5, "RE: MEMBERSHIP CONFIRMATION", ln=True)
-    
+
                 pdf.ln(3)
                 pdf.set_font("Arial", size=12)
                 pdf.multi_cell(0, 5, (
@@ -133,13 +133,13 @@ class MembershipLetterGenerator:
                     "You can count on our commitment to serve you. Your account details "
                     "are as indicated below:\n"
                 ))
-    
+
                 pdf.ln(3)
                 pdf.multi_cell(0, 5, (
                     f"Account Name: {name}\n"
                     f"Account Number: {row.get('ACCOUNT NUMBER', '')}"
                 ))
-    
+
                 pdf.ln(3)
                 pdf.multi_cell(0, 5, (
                     f"Please indicate your member number {member_number} for all transactions and instructions. "
@@ -147,16 +147,16 @@ class MembershipLetterGenerator:
                     "Ongata Rongai Branch, A/c No. 01134211013100 or Mpesa Paybill number 400222 and "
                     f"the account number is 412673#{member_number}."
                 ))
-    
+
                 pdf.ln(3)
                 pdf.multi_cell(0, 5, (
                     "For other requests, kindly send your request to pceabarakaparish@yahoo.com "
                     f"also indicating your member number {member_number}."
                 ))
-    
+
                 pdf.ln(5)
                 pdf.cell(0, 5, "Yours faithfully,", ln=True)
-    
+
                 # Stamp
                 try:
                     stamp_width = 70
@@ -164,51 +164,51 @@ class MembershipLetterGenerator:
                     pdf.image(logo_path, x=10, y=pdf.get_y() + 5, w=stamp_width, h=stamp_height)
                 except RuntimeError:
                     logging.warning("Stamp logo image not found, skipping stamp.")
-    
+
                 pdf.ln(stamp_height + 15)
                 pdf.set_line_width(0.5)
                 pdf.line(pdf.get_x(), pdf.get_y(), pdf.w - 10, pdf.get_y())
-    
+
                 # Footer
                 pdf.set_y(-45)
                 pdf.set_font("Arial", style="B", size=8)
                 pdf.cell(0, 5, "Growing Together", ln=True, align='C')
-    
+
                 # Save PDF
                 output_path = os.path.join(output_directory, f"{member_number}.pdf")
                 pdf.output(output_path)
-    
+
                 # Emailing part
                 recipient_email = row.get("EMAIL")
-                cc_email = "dmwangike@yahoo.com"
-    
-                if recipient_email:
-                    subject = "PCEA CHAIRETE SACCO WELCOME LETTER"
-                    body = f"""Dear Member {member_number},
-    
-    Welcome to PCEA CHAIRETE SACCO. Find attached your welcome letter with instructions on how to make your payments and to contact the SACCO.
-    
-    Your Investment Partner,
-    
-    PCEA CHAIRETE SACCO."""
-    
-                    msg = Message(
-                        subject=subject,
-                        recipients=[recipient_email],
-                        cc=[cc_email],
-                        body=body
-                    )
-    
-                    with open(output_path, "rb") as f:
-                        msg.attach(f"Welcome_Letter_{member_number}.pdf", "application/pdf", f.read())
-    
-                    try:
-                        with current_app.app_context():
-                            mail.send(msg)
-                            print(f"Email sent to {recipient_email}")
-                    except Exception as email_error:
-                        logging.error(f"Failed to send email to {recipient_email}: {email_error}")
-    
+                monitoring_email = "dmwangike@yahoo.com"
+
+                subject = "PCEA CHAIRETE SACCO WELCOME LETTER"
+                body = f"""Dear Member {member_number},
+
+Welcome to PCEA CHAIRETE SACCO. Find attached your welcome letter with instructions on how to make your payments and to contact the SACCO.
+
+Your Investment Partner,
+
+PCEA CHAIRETE SACCO."""
+
+                recipients = [recipient_email] if recipient_email else []
+                msg = Message(
+                    subject=subject,
+                    recipients=recipients,
+                    bcc=[monitoring_email],
+                    body=body
+                )
+
+                with open(output_path, "rb") as f:
+                    msg.attach(f"Welcome_Letter_{member_number}.pdf", "application/pdf", f.read())
+
+                try:
+                    with current_app.app_context():
+                        mail.send(msg)
+                        logging.info(f"Email sent to {recipient_email or '[no recipient]'} (BCC to monitor)")
+                except Exception as email_error:
+                    logging.error(f"Failed to send email to {recipient_email or '[no recipient]'}: {email_error}")
+
         except Exception as e:
             logging.exception("Unexpected error occurred during PDF generation.")
 
