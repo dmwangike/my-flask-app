@@ -12,7 +12,7 @@ from flask import current_app
 from flask_mail import Message
 
 
-from app import mail, app  # Import mail & app defined in app.py
+from extensions import mail
 
 
 

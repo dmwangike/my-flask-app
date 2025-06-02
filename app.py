@@ -59,7 +59,7 @@ from reportlab.lib.units import inch
 
 from myfunctions.localpkg import generate_statements_logic,create_date_folder,create_bank_statement_revised
 
-    
+from extensions import mail    
     
     
     
@@ -77,7 +77,10 @@ app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'dangawalla@gmail.com' 
 app.config['MAIL_PASSWORD'] = 'ghno sctr qbcl mljd'
 app.config['MAIL_DEFAULT_SENDER'] = 'noreply@demo.com'
-mail = Mail(app)
+#mail = Mail(app)
+
+# Initialize mail with app
+mail.init_app(app)
 
 # Import after defining mail
 from myfunctions.welcome import MembershipLetterGenerator
