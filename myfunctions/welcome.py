@@ -8,6 +8,14 @@ load_dotenv()
 import urllib.parse as urlparse
 
 
+
+
+
+from flask_mail import Message
+from flask import current_app
+from datetime import datetime
+
+
 import logging
 
 def get_db_connection():
