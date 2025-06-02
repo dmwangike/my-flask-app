@@ -109,12 +109,11 @@ class MembershipLetterGenerator:
                 # Recipient info
                 name = row.get("NAME", "")
                 member_number = row.get("MEMBER NUMBER", "")
-                code = row.get("Code", "")
-                city = row.get("City", "")
+)
 
                 pdf.ln(5)
                 pdf.cell(0, 5, name, ln=True)
-                pdf.cell(0, 5, f"{member_number} - {code}", ln=True)
+                pdf.cell(0, 5, f"{member_number} ", ln=True)
                 pdf.cell(0, 5, city, ln=True)
 
                 # Salutation and body
