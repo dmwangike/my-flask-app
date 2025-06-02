@@ -8,22 +8,15 @@ load_dotenv()
 import urllib.parse as urlparse
 
 
-
-
-
-from flask_mail import Message
 from flask import current_app
-from datetime import datetime
+from flask_mail import Message
 
 
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = 'dangawalla@gmail.com' 
-app.config['MAIL_PASSWORD'] = 'ghno sctr qbcl mljd'
-app.config['MAIL_DEFAULT_SENDER'] = 'noreply@demo.com'
-mail = Mail(app)
+from app import mail, app  # Import mail & app defined in app.py
+
+
+
+
 
 
 

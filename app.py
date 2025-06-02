@@ -14,7 +14,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from forms import  CMSForm,ReportsForm, CustDetailForm,EnrichForm,UpdateTRXForm,custWDRForm,populate_bank_choices,PageSelectionForm,amendCNTForm,editBNKForm,editKYCForm,HolsForm
 
 from myfunctions.custfile import enrich_cust_details_logic, capture_cust,get_db_connection,get_customer_name_logic,get_trx_details_logic,update_trx_details_logic
-from myfunctions.welcome import MembershipLetterGenerator
+
 from myfunctions.receipt import receipt_customer
 from myfunctions.custwithdraw import  queue_withdr_logic,get_with_details_logic,generate_withdrawal_logic,recon_purchases_logic,audit_report_logic
 from myfunctions.edit_cust import amend_cust_contacts_logic,get_amend_cust_contact_logic,edit_bnk_details_logic,get_edit_bnk_details_logic,get_edit_kyc_details_logic,edit_kyc_details_logic,add_related_party_logic,get_edit_related_party_logic,edit_related_party_logic,fetch_member_logic,assign_beneficiary_allocations_logic,fetch_guarantor_name_logic,fetch_member_balance_logic,loan_form_logic
@@ -79,7 +79,8 @@ app.config['MAIL_PASSWORD'] = 'ghno sctr qbcl mljd'
 app.config['MAIL_DEFAULT_SENDER'] = 'noreply@demo.com'
 mail = Mail(app)
 
-
+# Import after defining mail
+from myfunctions.welcome import MembershipLetterGenerator
 
 
 # List of allowed IPs
