@@ -115,7 +115,7 @@ class MembershipLetterGenerator:
                 pdf.ln(5)
                 pdf.cell(0, 5, name, ln=True)
                 pdf.cell(0, 5, f"{member_number}", ln=True)
-                pdf.cell(0, 5, city, ln=True)
+                #pdf.cell(0, 5, city, ln=True)
 
                 # Salutation and body
                 pdf.ln(5)
