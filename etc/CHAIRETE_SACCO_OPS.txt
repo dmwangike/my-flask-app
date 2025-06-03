@@ -330,3 +330,14 @@ CREATE TABLE loan_schedules (
 ALTER TABLE transactions ADD CONSTRAINT unique_trx_entry
 UNIQUE (account_number, narrative, amount, entered_by, ipaddr);
 
+
+ALTER TABLE loan_schedules ADD pending_instalment NUMERIC(20,2);
+
+ALTER TABLE loan_schedules ADD last_updated date;
+
+
+
+ALTER TABLE portfolio
+ALTER COLUMN balance TYPE NUMERIC(20,2)
+USING balance::NUMERIC;
+

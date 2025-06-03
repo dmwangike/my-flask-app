@@ -13,7 +13,7 @@ from datetime import datetime
 from werkzeug.middleware.proxy_fix import ProxyFix
 import socket
 from myfunctions.welcome import MembershipLetterGenerator
-from forms import  CMSForm, CustDetailForm,EnrichForm,UpdateTRXForm,custWDRForm,populate_bank_choices,amendCNTForm,editBNKForm,editKYCForm,addRTDForm,editRTDForm,BeneficiaryForm,LoanForm
+from forms import  CMSForm, CustDetailForm,EnrichForm,UpdateTRXForm,custWDRForm,populate_bank_choices,amendCNTForm,editBNKForm,editKYCForm,addRTDForm,editRTDForm,BeneficiaryForm,LoanForm,cusdKYCForm
 from markupsafe import Markup,escape 
 from jinjasql import JinjaSql
 from Runpy import sqlparse
@@ -290,7 +290,42 @@ def get_edit_kyc_details_logic():
         # Log the exception (not shown here) and return a server error response
         return jsonify({'error': 'An error occurred while processing your request'}), 500        
         
+# Function fill cust query
+def get_cust_details_logic():
+    cmemberid = request.form.get('cmemberid')
+    
+    # Validate input
+    if not cmemberid or not cmemberid.isalnum():
+        return jsonify({'error': 'Invalid unique ID provided'}), 400
+    
+    try:
+        # Database connection and query execution
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                query = """
+                    SELECT cust_name, identification, pref_phone,pref_email,congregation 
+                    from MEMBERS
+                    WHERE membership_number = %s;
+                """
+                cursor.execute(query, (cmemberid,))
+                result = cursor.fetchone()
         
+        # Handle results
+        if result:
+            return jsonify({
+                'cname': result[0],
+                'ccustno': result[1],
+                'cphone': result[2],
+                'cemail': result[3],
+                'ccongr': result[4],
+            })
+        else:
+            return jsonify({'error': 'No data found for the given unique ID'}), 404
+    
+    except Exception as e:
+        # Log the exception (not shown here) and return a server error response
+        return jsonify({'error': 'An error occurred while processing your request'}), 500        
+                
 
 
 # Update Customer Bank Details

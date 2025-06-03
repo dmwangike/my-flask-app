@@ -11,13 +11,13 @@ load_dotenv()
 from flask import Flask, render_template, url_for, flash, redirect,request,jsonify,send_file, make_response,abort, current_app 
 from datetime import datetime, timedelta
 from werkzeug.middleware.proxy_fix import ProxyFix
-from forms import  CMSForm,ReportsForm, CustDetailForm,EnrichForm,UpdateTRXForm,custWDRForm,populate_bank_choices,PageSelectionForm,amendCNTForm,editBNKForm,editKYCForm,HolsForm
+from forms import  CMSForm,ReportsForm, CustDetailForm,EnrichForm,UpdateTRXForm,custWDRForm,populate_bank_choices,PageSelectionForm,amendCNTForm,editBNKForm,editKYCForm,HolsForm,cusdKYCForm
 
 from myfunctions.custfile import enrich_cust_details_logic, capture_cust,get_db_connection,get_customer_name_logic,get_trx_details_logic,update_trx_details_logic
 
 from myfunctions.receipt import receipt_customer
 from myfunctions.custwithdraw import  queue_withdr_logic,get_with_details_logic,generate_withdrawal_logic,recon_purchases_logic,audit_report_logic
-from myfunctions.edit_cust import amend_cust_contacts_logic,get_amend_cust_contact_logic,edit_bnk_details_logic,get_edit_bnk_details_logic,get_edit_kyc_details_logic,edit_kyc_details_logic,add_related_party_logic,get_edit_related_party_logic,edit_related_party_logic,fetch_member_logic,assign_beneficiary_allocations_logic,fetch_guarantor_name_logic,fetch_member_balance_logic,loan_form_logic
+from myfunctions.edit_cust import amend_cust_contacts_logic,get_amend_cust_contact_logic,edit_bnk_details_logic,get_edit_bnk_details_logic,get_edit_kyc_details_logic,edit_kyc_details_logic,add_related_party_logic,get_edit_related_party_logic,edit_related_party_logic,fetch_member_logic,assign_beneficiary_allocations_logic,fetch_guarantor_name_logic,fetch_member_balance_logic,loan_form_logic,get_cust_details_logic
 from sqlalchemy import create_engine
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField,PasswordField,validators,FloatField,DateField, SelectField
@@ -478,6 +478,13 @@ def get_edit_bnk_details():
 def get_edit_kyc_details():
     return get_edit_kyc_details_logic() 
     
+@app.route('/get_cust_details', methods=['GET', 'POST'])
+@login_required 
+def get_cust_details():
+    return get_cust_details_logic() 
+
+
+    
     
 @app.route('/get_edit_related_party', methods=['GET', 'POST'])
 @login_required 
@@ -497,6 +504,12 @@ def generate_statements():
     generate_statements_logic()  
     return redirect(url_for('home'))  
             
+
+@app.route('/enquire_cust_details', methods=['GET'])
+def enquire_cust_details():
+    form = cusdKYCForm()
+    return render_template('enquire_cust_details.html', form=form)
+
     
     
 @app.route("/execute_sql", methods=['GET','POST'])

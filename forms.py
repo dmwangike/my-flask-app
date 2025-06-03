@@ -152,7 +152,51 @@ class editKYCForm(FlaskForm):
         conn.close()
         
         
-        
+ 
+
+class cusdKYCForm(FlaskForm):
+ 
+     cmemberid = StringField('MEMBER_NO',
+                             validators=[DataRequired(), Length(min=2, max=100)])
+     cname = StringField('CUSTOMER',
+                              validators=[DataRequired(), Length(min=2, max=200)], render_kw={"readonly": True})
+     ccustno = StringField('CUSTOMER_NUMBER',
+                              validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
+     cphone = StringField('PHONE_NUMBER',
+                              validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
+     cemail = StringField('CUSTOMER_EMAIL',
+                              validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
+     ccongr = StringField('CONGREGATION',
+                              validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True})   
+ 
+     def populate_cust(self):
+         conn = get_db_connect()  # Function to get DB connection
+         cursor = conn.cursor()
+         
+         query = """
+         SELECT cust_name, identification, pref_phone,pref_email,congregation 
+         from MEMBERS 
+         WHERE membership_number = %s
+         """
+         cursor.execute(query, (self.cmemberid.data,))
+ 
+         result = cursor.fetchone()
+         if result:
+             self.cname.data = result[0]  
+             self.ccustno.data = result[1]  
+             self.cphone.data = result[2]  
+             self.cemail.data = result[3] 
+             self.ccongr.data = result[4]              
+ 
+         cursor.close()
+         conn.close()
+ 
+ 
+ 
+ 
+ 
+ 
+ 
         
 class editRTDForm(FlaskForm):
 
