@@ -160,7 +160,7 @@ class cusdKYCForm(FlaskForm):
                              validators=[DataRequired(), Length(min=2, max=100)])
      cname = StringField('CUSTOMER',
                               validators=[DataRequired(), Length(min=2, max=200)], render_kw={"readonly": True})
-     ccustno = StringField('CUSTOMER_NUMBER',
+     ccustno = StringField('CUSTOMER_ID',
                               validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
      cphone = StringField('PHONE_NUMBER',
                               validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
@@ -279,11 +279,11 @@ class EnrichForm(FlaskForm):
         'CONGREGATION',
         validators=[DataRequired()],
         choices=[
-            ('upendo', 'Upendo'),
-            ('nkaimurunya', 'Nkaimurunya'),
-            ('ongata', 'Ongata'),            
-            ('macedonia', 'Macedonia'), 
-            ('others', 'Others')
+            ('Upendo', 'upendo'),
+            ('Nkaimurunya', 'nkaimurunya'),
+            ('Ongata', 'ongata'),            
+            ('Macedonia', 'macedonia'), 
+            ('Others', 'others')
         ],
         coerce=str  # Ensures the selected value is returned as a string
 )

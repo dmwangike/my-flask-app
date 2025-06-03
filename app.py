@@ -36,30 +36,23 @@ from jinjasql import JinjaSql
 import cryptography as cy
 from cryptography.fernet import Fernet
 import pandas as pd
-#import oracledb
-#from oracledb import create_pool,InterfaceError
-
-#oracledb.init_oracle_client(lib_dir="C:\\Program Files (x86)\\Oracle\\instantclient_19_11")
 import psycopg2
 import logging
 logging.basicConfig(level=logging.DEBUG)
 import re
 import os,shutil
 import sys
-#import paramiko
 from base64 import decodebytes
 import zipfile
-
-
 from reportlab.lib import colors
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import letter, A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
-
-
 from myfunctions.localpkg import generate_statements_logic,create_date_folder,create_bank_statement_revised
+from extensions import mail
+from io import BytesIO
+from reportlab.lib.utils import ImageReader
 
-from extensions import mail    
     
     
     
@@ -77,7 +70,7 @@ app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'dangawalla@gmail.com' 
 app.config['MAIL_PASSWORD'] = 'ghno sctr qbcl mljd'
 app.config['MAIL_DEFAULT_SENDER'] = 'noreply@demo.com'
-#mail = Mail(app)
+
 
 # Initialize mail with app
 mail.init_app(app)
@@ -86,14 +79,6 @@ mail.init_app(app)
 from myfunctions.welcome import MembershipLetterGenerator
 
 
-# List of allowed IPs
-#ALLOWED_IPS = {'127.0.0.1','192.168.100.243', '203.0.113.5'}  # Replace with your allowed IPs
-
-#@app.before_request
-#def limit_remote_addr():
-#    client_ip = request.remote_addr
-#    if client_ip not in ALLOWED_IPS:
-#        abort(403)  # Forbidden
 
 posts = [
     {
@@ -510,37 +495,7 @@ def enquire_cust_details():
     form = cusdKYCForm()
     return render_template('enquire_cust_details.html', form=form)
 
-    
-    
-@app.route("/execute_sql", methods=['GET','POST'])
-@login_required 
-def  execute_sql():
-    # Connect to the database
-    conn = get_db_connection()
-    query = """
-    with new_clients as (
-    select customer_id, cust_name, cust_acct,datejoined, identification,account_no,cust_bank,
-    ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY account_no desc) AS rwn from clients join 
-    portfolio using(customer_id)where datejoined = CURRENT_DATE)
-    SELECT * from new_clients where rwn = 1
-               """
-    
-    # Read data into a DataFrame
-    df = pd.read_sql(query, conn)
-    conn.close()
-    conditions = df['cust_acct'].tolist()
-    df_orc = fetch_oracle(conditions)
-    check_df = pd.merge(df, df_orc, how='left', left_on='cust_acct', right_on='BANK_ACCT')
 
-
-    
-    # Create an Excel file on disk
-    today = datetime.today().strftime('%Y-%m-%d')
-    filename = f"E:\\oikonomos\\DATA\\acct_open_{today}.xlsx" 
-    check_df.to_excel(filename, index=False, sheet_name='Data')
-
-    flash('Extract successful. Please check location', 'success')
-    return render_template('execute_sql.html', title='CUS', posts=post1)
     
 
     
@@ -836,6 +791,9 @@ class RegistrationForm(FlaskForm):
         conn.close()
         if user:
             raise ValidationError('That email is taken. Please choose a different one.')
+            
+            
+       
 
 
 class LoginForm(FlaskForm):
@@ -870,6 +828,128 @@ class ResetPasswordForm(FlaskForm):
     submit = SubmitField('Reset Password')
 
 
+
+@app.route('/generate_statement', methods=['POST'])
+def generate_statement():
+    member_number = request.form.get('member_number')
+    if not member_number:
+        flash('Member number is required', 'danger')
+        return redirect(url_for('home'))
+
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    # Get Header Info
+    cur.execute("""
+        SELECT membership_number, cust_name, pref_phone, congregation, pref_email
+        FROM MEMBERS WHERE membership_number = %s
+    """, (member_number,))
+    header = cur.fetchone()
+
+    if not header:
+        flash(f'Member {member_number} not found.', 'danger')
+        return redirect(url_for('home'))
+
+    # Get Transactions
+    cur.execute("""
+        SELECT P.membership_number, T.account_number, T.trans_date::DATE, T.narrative,
+               T.amount, T.running_balance, T.trxid
+        FROM transactions T
+        JOIN portfolio P ON T.account_number = P.account_no
+        WHERE account_type = 'Savings' AND P.membership_number = %s
+    """, (member_number,))
+    transactions = cur.fetchall()
+
+    # Get Summary
+    cur.execute("""
+        SELECT membership_number, account_type, ACCOUNT_NO, BALANCE FROM portfolio 
+        WHERE account_type = 'Deposits' AND membership_number = %s
+        UNION
+        SELECT MEMBER_NUMBER, 'Loans', LOAN_ACCOUNT, PENDING_AMOUNT FROM LOAN_ACCOUNTS 
+        WHERE PENDING_AMOUNT <> 0 AND MEMBER_NUMBER = %s
+        UNION
+        SELECT MEMBERSHIP_NUMBER, 'Interest Due', INTEREST_ACCOUNT, INTEREST_DUE 
+        FROM INTEREST_ACCOUNTS 
+        WHERE INTEREST_DUE <> 0 AND MEMBERSHIP_NUMBER = %s
+    """, (member_number, member_number, member_number))
+    summary = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    # Generate PDF
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    logo_path = "static/logo.png"
+    p.drawImage(ImageReader(logo_path), 40, height - 100, width=100, preserveAspectRatio=True)
+
+    # Header
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(150, height - 70, "Member Statement")
+    p.setFont("Helvetica", 10)
+    p.drawString(150, height - 85, f"Date of Extraction: {datetime.now().strftime('%Y-%m-%d')}")
+
+    y = height - 120
+    p.drawString(40, y, f"Member #: {header[0]}")
+    p.drawString(240, y, f"Name: {header[1]}")
+    y -= 15
+    p.drawString(40, y, f"Phone: {header[2]}")
+    p.drawString(240, y, f"Congregation: {header[3]}")
+
+    # Transactions
+    y -= 30
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(40, y, "Transactions:")
+    y -= 15
+    p.setFont("Helvetica", 9)
+    for t in transactions:
+        if y < 100:
+            p.showPage()
+            y = height - 50
+        line = f"{t[2]} | {t[3]} | {t[4]:,.2f} | Bal: {t[5]:,.2f}"
+        p.drawString(50, y, line)
+        y -= 12
+
+    # Summary
+    y -= 25
+    p.setFont("Helvetica-Bold", 12)
+    p.drawString(40, y, "Summary:")
+    y -= 15
+    p.setFont("Helvetica", 9)
+    for s in summary:
+        line = f"{s[1]} ({s[2]}): {s[3]:,.2f}"
+        p.drawString(50, y, line)
+        y -= 12
+
+    # Footer
+    p.setFont("Helvetica-BoldOblique", 11)
+    p.drawString(200, 30, "GROWING TOGETHER")
+
+    p.showPage()
+    p.save()
+
+    buffer.seek(0)
+
+    # Email PDF
+    recipients = [header[4]] if header[4] else []
+    cc_list = ['dmwangike@yahoo.com']
+
+    msg = Message(subject="Member Statement",
+                  sender="noreply@example.com",
+                  recipients=recipients or cc_list,
+                  cc=cc_list,
+                  body=f"Attached is the member statement for {header[1]} ({header[0]}).")
+    msg.attach(f"{member_number}_statement.pdf", "application/pdf", buffer.read())
+
+    try:
+        mail.send(msg)
+        flash(f"Statement emailed to {header[4] or '[no member email]'}, CCed to dmwangike@yahoo.com", "success")
+    except Exception as e:
+        flash(f"Failed to send to member, but CCed to dmwangike@yahoo.com. Error: {str(e)}", "warning")
+
+    return redirect(url_for('home'))
 
 
 
