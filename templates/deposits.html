@@ -31,17 +31,8 @@
             <label for="member_number">Enter Member Number</label>
             <input type="text" name="member_number" class="form-control" placeholder="e.g., M00012" required>
         </div>
-        <button type="submit" class="btn btn-outline-primary" style="width: 300px;">Email Member Statement</button>
+        <button type="submit" class="btn btn-outline-success" style="width: 300px;">Email Member Statement</button>
     </form>
 </div>
-
-<div class="form-group">
-            <form action="{{ url_for('define_holidays') }}" method="post">
-                {{ form.hidden_tag() }}
-                <button type="submit" class="btn btn-outline-danger" style="width: 300px;">Define Holidays</button>
-            </form>
-        </div>
-
-    </div>
 
 {% endblock content %}
