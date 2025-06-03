@@ -505,7 +505,7 @@ def generate_statements():
     return redirect(url_for('home'))  
             
 
-@app.route('/enquire_cust_details', methods=['GET'])
+@app.route('/enquire_cust_details', methods=['GET', 'POST'])
 def enquire_cust_details():
     form = cusdKYCForm()
     return render_template('enquire_cust_details.html', form=form)
