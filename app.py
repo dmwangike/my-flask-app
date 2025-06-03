@@ -52,6 +52,7 @@ from myfunctions.localpkg import generate_statements_logic,create_date_folder,cr
 from extensions import mail
 from io import BytesIO
 from reportlab.lib.utils import ImageReader
+from reportlab.platypus import Table, TableStyle
 
     
     
@@ -839,18 +840,17 @@ def generate_statement():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Get Header Info
+    # Header Info
     cur.execute("""
         SELECT membership_number, cust_name, pref_phone, congregation, pref_email
         FROM MEMBERS WHERE membership_number = %s
     """, (member_number,))
     header = cur.fetchone()
-
     if not header:
         flash(f'Member {member_number} not found.', 'danger')
         return redirect(url_for('home'))
 
-    # Get Transactions
+    # Transactions
     cur.execute("""
         SELECT P.membership_number, T.account_number, T.trans_date::DATE, T.narrative,
                T.amount, T.running_balance, T.trxid
@@ -860,7 +860,7 @@ def generate_statement():
     """, (member_number,))
     transactions = cur.fetchall()
 
-    # Get Summary
+    # Summary
     cur.execute("""
         SELECT membership_number, account_type, ACCOUNT_NO, BALANCE FROM portfolio 
         WHERE account_type = 'Deposits' AND membership_number = %s
@@ -882,60 +882,105 @@ def generate_statement():
     p = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
 
+    # Logo
     logo_path = "static/logo.png"
-    p.drawImage(ImageReader(logo_path), 40, height - 100, width=100, preserveAspectRatio=True)
+    p.drawImage(ImageReader(logo_path), 40, height - 130, width=100, height=50, preserveAspectRatio=True, mask='auto')
 
     # Header
     p.setFont("Helvetica-Bold", 14)
-    p.drawString(150, height - 70, "Member Statement")
+    p.drawString(160, height - 100, "Member Statement")
     p.setFont("Helvetica", 10)
-    p.drawString(150, height - 85, f"Date of Extraction: {datetime.now().strftime('%Y-%m-%d')}")
+    p.drawString(160, height - 115, f"Date: {datetime.now().strftime('%Y-%m-%d')}")
 
-    y = height - 120
-    p.drawString(40, y, f"Member #: {header[0]}")
-    p.drawString(240, y, f"Name: {header[1]}")
+    y = height - 150
+    p.setFont("Helvetica", 10)
+    p.drawString(40, y, f"Member #: {header[0] or ''}")
+    p.drawString(240, y, f"Name: {header[1] or ''}")
     y -= 15
-    p.drawString(40, y, f"Phone: {header[2]}")
-    p.drawString(240, y, f"Congregation: {header[3]}")
+    p.drawString(40, y, f"Phone: {header[2] or ''}")
+    p.drawString(240, y, f"Congregation: {header[3] or ''}")
 
-    # Transactions
+    # Transactions Table
     y -= 30
-    p.setFont("Helvetica-Bold", 12)
+    p.setFont("Helvetica-Bold", 11)
     p.drawString(40, y, "Transactions:")
-    y -= 15
-    p.setFont("Helvetica", 9)
-    for t in transactions:
-        if y < 100:
-            p.showPage()
-            y = height - 50
-        line = f"{t[2]} | {t[3]} | {t[4]:,.2f} | Bal: {t[5]:,.2f}"
-        p.drawString(50, y, line)
-        y -= 12
+    y -= 20
 
-    # Summary
-    y -= 25
-    p.setFont("Helvetica-Bold", 12)
+    if not transactions:
+        p.setFont("Helvetica", 9)
+        p.drawString(50, y, "No transactions available.")
+        y -= 20
+    else:
+        data = [["DATE", "NARRATION", "AMOUNT", "BALANCE"]]
+        for t in transactions:
+            row = [
+                t[2].strftime('%Y-%m-%d') if t[2] else "",
+                t[3] or "",
+                f"{t[4]:,.2f}" if t[4] else "",
+                f"{t[5]:,.2f}" if t[5] else ""
+            ]
+            data.append(row)
+
+        table = Table(data, colWidths=[80, 230, 90, 90])
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
+            ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 5),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        table.wrapOn(p, width - 80, height)
+        table.drawOn(p, 40, y - (len(data) * 18))
+
+        y = y - (len(data) * 18) - 30
+
+    # Summary Table
+    p.setFont("Helvetica-Bold", 11)
     p.drawString(40, y, "Summary:")
-    y -= 15
-    p.setFont("Helvetica", 9)
-    for s in summary:
-        line = f"{s[1]} ({s[2]}): {s[3]:,.2f}"
-        p.drawString(50, y, line)
-        y -= 12
+    y -= 20
+
+    if not summary:
+        p.setFont("Helvetica", 9)
+        p.drawString(50, y, "No summary data available.")
+        y -= 20
+    else:
+        sdata = [["ACCOUNT_TYPE", "ACCOUNT_NO", "BALANCE"]]
+        for s in summary:
+            row = [
+                s[1] or "",
+                s[2] or "",
+                f"{s[3]:,.2f}" if s[3] else ""
+            ]
+            sdata.append(row)
+
+        stable = Table(sdata, colWidths=[150, 180, 100])
+        stable.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
+            ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 5),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]))
+        stable.wrapOn(p, width - 80, height)
+        stable.drawOn(p, 40, y - (len(sdata) * 18))
+
+        y = y - (len(sdata) * 18) - 30
 
     # Footer
     p.setFont("Helvetica-BoldOblique", 11)
-    p.drawString(200, 30, "GROWING TOGETHER")
+    p.drawString(230, 30, "GROWING TOGETHER")
 
     p.showPage()
     p.save()
-
     buffer.seek(0)
 
-    # Email PDF
+    # Email
     recipients = [header[4]] if header[4] else []
     cc_list = ['dmwangike@yahoo.com']
-
     msg = Message(subject="Member Statement",
                   sender="noreply@example.com",
                   recipients=recipients or cc_list,
@@ -950,6 +995,7 @@ def generate_statement():
         flash(f"Failed to send to member, but CCed to dmwangike@yahoo.com. Error: {str(e)}", "warning")
 
     return redirect(url_for('home'))
+
 
 
 
