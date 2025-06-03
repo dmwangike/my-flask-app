@@ -916,8 +916,9 @@ def generate_statement():
             row = [
                 t[2].strftime('%Y-%m-%d') if t[2] else "",
                 t[3] or "",
-                f"{t[4]:,.2f}" if t[4] else "0.00",
-                f"{t[5]:,.2f}" if t[5] else "0.00"
+                f"{t[4]:,.2f}" if t[4] is not None else "0.00",
+                f"{t[5]:,.2f}" if t[5] is not None else "0.00"    
+                   
             ]
             data.append(row)
 
