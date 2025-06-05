@@ -279,11 +279,11 @@ class EnrichForm(FlaskForm):
         'CONGREGATION',
         validators=[DataRequired()],
         choices=[
-            ('Upendo', 'upendo'),
-            ('Nkaimurunya', 'nkaimurunya'),
-            ('Ongata', 'ongata'),            
-            ('Macedonia', 'macedonia'), 
-            ('Others', 'others')
+            ('upendo', 'Upendo'),
+            ('nkaimurunya', 'Nkaimurunya'),
+            ('ongata', 'Ongata'),            
+            ('macedonia', 'Macedonia'), 
+            ('others', 'Others')
         ],
         coerce=str  # Ensures the selected value is returned as a string
 )

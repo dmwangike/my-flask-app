@@ -30,6 +30,7 @@ import sys
 import zipfile
 from reportlab.pdfgen import canvas
 import qrcode
+import io
 from io import BytesIO
 from reportlab.lib import colors
 from reportlab.platypus import Table, TableStyle
@@ -86,10 +87,15 @@ def generate_qr_code(data):
     temp_file.close()
     return temp_file.name
 
+import io
+from flask import send_file
+
 def generate_receipt(customer):
     membership_number, cust_name, post_address, city, post_code, account_number, trans_date, counter, narration, amount, pref_email = customer
-    receipt_file = os.path.join(WELCOME_DIR, f"receipt_{account_number}_{counter}.pdf")
-    c = canvas.Canvas(receipt_file, pagesize=landscape(letter))
+
+    # Use in-memory buffer instead of disk file
+    output = io.BytesIO()
+    c = canvas.Canvas(output, pagesize=landscape(letter))
     width, height = landscape(letter)
 
     logo_path = "logo.png"
@@ -151,6 +157,9 @@ def generate_receipt(customer):
     c.save()
     os.unlink(qr_file_path)
 
+    output.seek(0)  # Important: rewind the buffer for reading
+
+    # Optionally update the DB
     conn = get_db_connection()
     cursor = conn.cursor()
     update_query = """
@@ -161,6 +170,7 @@ def generate_receipt(customer):
     cursor.execute(update_query, (counter,))
     conn.commit()
 
+    # Email the receipt
     if pref_email:
         try:
             with current_app.app_context():
@@ -171,18 +181,15 @@ def generate_receipt(customer):
                     cc=["dmwangike@yahoo.com"],
                     body="Dear Member,\n\nFind attached your receipt for your recent deposit.\n\nKind Regards,\n\nPCEA CHAIRETE SACCO."
                 )
-                with open(receipt_file, 'rb') as f:
-                    msg.attach(
-                        filename=os.path.basename(receipt_file),
-                        content_type='application/pdf',
-                        data=f.read()
-                    )
+                msg.attach(f"receipt_{account_number}_{counter}.pdf", "application/pdf", output.getvalue())
                 mail.send(msg)
-                logging.info(f"Email sent to {pref_email} with receipt attached.")
         except Exception as e:
             logging.error(f"Failed to send email to {pref_email}: {e}")
 
-    logging.debug(f"Receipt generated: {receipt_file}")
+    # Return PDF buffer for download
+    filename = f"receipt_{account_number}_{counter}.pdf"
+    return send_file(output, download_name=filename, as_attachment=True)
+
 
 def receipt_customer():
     try:

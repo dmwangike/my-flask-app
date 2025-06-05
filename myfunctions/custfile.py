@@ -72,6 +72,7 @@ def enrich_cust_details_logic():
             cust_postcode = form.cpostcode.data.upper()
             cust_city = form.ccity.data.upper()
             cust_occu = form.coccu.data.upper()
+            cust_congr = form.ccongr.data.title()
             mod_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             #cust_mgr = os.getlogin()
             cust_mgr = current_user.username
@@ -91,13 +92,13 @@ def enrich_cust_details_logic():
                 # SQL UPDATE statement
                 update_query = """
                 UPDATE MEMBERS
-                SET post_address = %s, post_code = %s,city= %s, occupation = %s, date_modified = %s,modified_by = %s
+                SET post_address = %s, post_code = %s,city= %s, occupation = %s, date_modified = %s,modified_by = %s,congregation = %s
                 WHERE MEMBERSHIP_NUMBER = %s
                 """
                 cursor.execute(f"SET myapp.cust_mgr = '{cust_mgr}';") 
                 cursor.execute(f"SET myapp.client_ip = '{client_ip}';")                
                 # Execute the update statement
-                cursor.execute(update_query, (cust_postadd,cust_postcode,cust_city, cust_occu, mod_date,cust_mgr,cust_memid))
+                cursor.execute(update_query, (cust_postadd,cust_postcode,cust_city, cust_occu, mod_date,cust_mgr,cust_congr,cust_memid))
                 
                 # Commit the transaction
                 conn.commit()

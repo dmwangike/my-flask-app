@@ -341,3 +341,10 @@ ALTER TABLE portfolio
 ALTER COLUMN balance TYPE NUMERIC(20,2)
 USING balance::NUMERIC;
 
+
+
+CREATE TRIGGER trg_after_transaction_insert
+AFTER INSERT ON transactions
+FOR EACH ROW
+EXECUTE FUNCTION handle_transaction_insert();
+
