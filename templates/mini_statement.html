@@ -1,0 +1,28 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="content-section">
+    <h4>Mini Statement</h4>
+    <p><strong>Member Number:</strong> {{ header.membership_number }}</p>
+    <p><strong>Customer Name:</strong> {{ header.cust_name }}</p>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Narration</th>
+                <th>Amount</th>
+                <th>Balance</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in transactions %}
+            <tr>
+                <td>{{ row.trans_date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ row.narrative }}</td>
+                <td>{{ row.amount }}</td>
+                <td>{{ row.running_balance }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock content %}

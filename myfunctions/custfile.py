@@ -237,6 +237,47 @@ def update_trx_details_logic():
             #flash('Invalid Member ID format.', 'danger')
 
     return render_template('update_member_payment.html', title='MXP', form=form)
+    
+    
+    
+    
+
+def display_mini_statement_logic():
+    member_number = request.form.get('member_number')
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    query = """
+        SELECT c.membership_number, cust_name, trans_date, narrative, amount, running_balance
+        FROM transactions a
+        JOIN Portfolio b ON a.account_number = b.account_no AND account_type = 'Savings'
+        JOIN MEMBERS c ON c.membership_number = b.membership_number
+        WHERE c.membership_number = %s
+        ORDER BY trxid DESC
+        LIMIT 10
+    """
+    cursor.execute(query, (member_number,))
+    rows = cursor.fetchall()
+
+    if not rows:
+        flash("No transactions found for that member.", "warning")
+        return redirect(url_for('some_route_name'))  # Replace with your actual route
+
+    # Fetch column names and map to dicts
+    colnames = [desc[0] for desc in cursor.description]
+    transactions = [dict(zip(colnames, row)) for row in rows]
+
+    header_info = {
+        "membership_number": transactions[0]["membership_number"],
+        "cust_name": transactions[0]["cust_name"]
+    }
+
+    cursor.close()
+    conn.close()
+
+    return render_template('mini_statement.html', header=header_info, transactions=transactions)
+
   
  # Member Customer Details   
 

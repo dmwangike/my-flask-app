@@ -13,7 +13,7 @@ from datetime import datetime, timedelta
 from werkzeug.middleware.proxy_fix import ProxyFix
 from forms import  CMSForm,ReportsForm, CustDetailForm,EnrichForm,UpdateTRXForm,custWDRForm,populate_bank_choices,PageSelectionForm,amendCNTForm,editBNKForm,editKYCForm,HolsForm,cusdKYCForm
 
-from myfunctions.custfile import enrich_cust_details_logic, capture_cust,get_db_connection,get_customer_name_logic,get_trx_details_logic,update_trx_details_logic
+from myfunctions.custfile import enrich_cust_details_logic, capture_cust,get_db_connection,get_customer_name_logic,get_trx_details_logic,update_trx_details_logic,display_mini_statement_logic
 
 from myfunctions.receipt import receipt_customer
 from myfunctions.custwithdraw import  queue_withdr_logic,get_with_details_logic,generate_withdrawal_logic,recon_purchases_logic,audit_report_logic
@@ -481,7 +481,12 @@ def get_edit_related_party():
 @app.route('/add_related_party', methods=['GET', 'POST'])
 @login_required 
 def add_related_party():
-    return add_related_party_logic()    
+    return add_related_party_logic() 
+    
+@app.route('/display_mini_statement', methods=['GET','POST'])
+@login_required
+def display_mini_statement():
+    return display_mini_statement_logic() 
   
     
 @app.route('/generate_statements', methods=['GET', 'POST'])
