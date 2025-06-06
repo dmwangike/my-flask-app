@@ -63,11 +63,12 @@ def get_db_connection():
 # Populate the KYC Details for a Member
 def enrich_cust_details_logic():
     form = EnrichForm()
-    regex = re.compile(r'[A-Za-z0-9 _-]+')
+    #regex = re.compile(r'[A-Za-z0-9 _-]+')
+    regex = re.compile(r'[A-Za-z0-9 _-]+', re.IGNORECASE)
     if form.validate_on_submit():
         if regex.match(form.cmemberid.data):
             cust_name = form.cname.data
-            cust_memid = form.cmemberid.data
+            cust_memid = form.cmemberid.data.upper()
             cust_postadd = form.cpostadd.data
             cust_postcode = form.cpostcode.data.upper()
             cust_city = form.ccity.data.upper()
