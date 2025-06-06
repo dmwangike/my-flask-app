@@ -594,7 +594,7 @@ def fetch_member_logic():
         SELECT A.MEMBERSHIP_NUMBER, A.CUST_NAME, B.PARTYID, B.PARTY_NAME
         FROM MEMBERS A
         JOIN RELATED_PARTY B USING(MEMBERSHIP_NUMBER)
-        WHERE A.MEMBERSHIP_NUMBER = %s
+        WHERE  B.PARTY_ROLE = 'BEBNEFICIARY' AND A.MEMBERSHIP_NUMBER = %s
     """, (member_number,))
 
     rows = cur.fetchall()

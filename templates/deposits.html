@@ -32,17 +32,11 @@
             <input type="text" name="member_number" class="form-control" placeholder="e.g., M00012" required>
         </div>
         <button type="submit" name="action" value="email" formaction="{{ url_for('generate_statement') }}" class="btn btn-outline-success" style="width: 300px;">Email Member Statement</button>
-        <button type="submit" name="action" value="display" formaction="{{ url_for('display_mini_statement') }}" class="btn btn-outline-info" style="width: 300px; margin-top: 10px;">Display Mini Statement</button>
+        <button type="submit" name="action" value="display" formaction="{{ url_for('display_mini_statement') }}" class="btn btn-outline-success" style="width: 300px; margin-top: 10px;">Display Mini Statement</button>
     </form>
 </div>
 
 
-<div class="form-group">
-            <form action="{{ url_for('define_holidays') }}" method="post">
-                {{ form.hidden_tag() }}
-                <button type="submit" class="btn btn-outline-danger" style="width: 300px;">Define Holidays</button>
-            </form>
-        </div>
 
     </div>
 
