@@ -293,8 +293,9 @@ $$ LANGUAGE plpgsql;
 
 
 CREATE TRIGGER trigger_set_loan_acct
-BEFORE INSERT ON guarantors
+BEFORE INSERT OR UPDATE ON guarantors
 FOR EACH ROW
+WHEN (NEW.loan_acct IS NULL)
 EXECUTE FUNCTION set_loan_acct_on_guarantors();
 
 

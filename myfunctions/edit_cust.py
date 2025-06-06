@@ -788,24 +788,6 @@ def loan_form_logic():
             """, (member_number, pending_amount, loan_tenure, last_update_date,
                   pending_amount, cust_mgr, disbursement_date))
 
-            # Guarantors
-            for key in request.form:
-                if key.startswith("guarantor_number_"):
-                    suffix = key.split("_")[-1]
-                    guarantor_number = request.form.get(f"guarantor_number_{suffix}")
-                    amount_guaranteed = request.form.get(f"amount_guaranteed_{suffix}")
-                    if guarantor_number and amount_guaranteed:
-                        try:
-                            cur.execute("""
-                                INSERT INTO guarantors (
-                                    membership_number, amount_borrowed, disbursement_date,
-                                    guarantor_number, amount_guaranteed
-                                ) VALUES (%s, %s, %s, %s, %s)
-                            """, (member_number, amount_borrowed, disbursement_date,
-                                  guarantor_number, float(amount_guaranteed)))
-                        except ValueError:
-                            continue
-
             # Fetch loan details
             cur.execute("""
                 SELECT loan_account, member_loan_number, appraisal_fee 
@@ -816,6 +798,28 @@ def loan_form_logic():
             if not result:
                 raise Exception("Loan account could not be retrieved.")
             loan_account, member_loan_number, appraisal_fee = result
+
+
+
+
+            # Guarantors
+            for key in request.form:
+                if key.startswith("guarantor_number_"):
+                    suffix = key.split("_")[-1]
+                    guarantor_number = request.form.get(f"guarantor_number_{suffix}")
+                    amount_guaranteed = request.form.get(f"amount_guaranteed_{suffix}")
+                    if guarantor_number and amount_guaranteed:
+                        try:
+                            cur.execute("""
+                                INSERT INTO guarantors (
+                                    membership_number, loan_acct,amount_borrowed, disbursement_date,
+                                    guarantor_number, amount_guaranteed
+                                ) VALUES (%s, %s, %s, %s, %s, %s)
+                            """, (member_number,loan_account, amount_borrowed, disbursement_date,
+                                  guarantor_number, float(amount_guaranteed)))
+                        except ValueError:
+                            continue
+
 
             # Create interest account
             int_acct = f"{member_number}INT{member_loan_number}"
