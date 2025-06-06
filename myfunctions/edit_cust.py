@@ -800,7 +800,23 @@ def loan_form_logic():
             loan_account, member_loan_number, appraisal_fee = result
 
 
+            # Create interest account
+            int_acct = f"{member_number}INT{member_loan_number}"
+            disbursed_amount = amount_borrowed - appraisal_fee
+            new_bal3 = prev_balance2 + amount_borrowed - appraisal_fee
+            loan_drawdown_acct = f"{loan_account}_Drawdown"
+            loan_disbursement_acct = f"{loan_account}_Disbursement"
+            loan_appraisal_acct = f"{loan_account}_Appraisal_fee"
 
+            # Insert into interest_accounts
+            cur.execute("""
+                INSERT INTO INTEREST_ACCOUNTS (
+                    membership_number, interest_account, accrued_interest,
+                    total_loan_interest, loan_account, amount_borrowed,
+                    last_update_date, interest_due
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """, (member_number, int_acct, 0, 0, loan_account, amount_borrowed,
+                  last_update_date, 0))
 
             # Guarantors
             for key in request.form:
@@ -820,24 +836,6 @@ def loan_form_logic():
                         except ValueError:
                             continue
 
-
-            # Create interest account
-            int_acct = f"{member_number}INT{member_loan_number}"
-            disbursed_amount = amount_borrowed - appraisal_fee
-            new_bal3 = prev_balance2 + amount_borrowed - appraisal_fee
-            loan_drawdown_acct = f"{loan_account}_Drawdown"
-            loan_disbursement_acct = f"{loan_account}_Disbursement"
-            loan_appraisal_acct = f"{loan_account}_Appraisal_fee"
-
-            # Insert into interest_accounts
-            cur.execute("""
-                INSERT INTO INTEREST_ACCOUNTS (
-                    membership_number, interest_account, accrued_interest,
-                    total_loan_interest, loan_account, amount_borrowed,
-                    last_update_date, interest_due
-                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-            """, (member_number, int_acct, 0, 0, loan_account, amount_borrowed,
-                  last_update_date, 0))
 
             # Insert transactions
             trx_insert = """
