@@ -899,7 +899,7 @@ def update_loan_status_logic():
         cur = conn.cursor()
 
         # Call the stored procedure
-        cur.execute("CALL update_loan_status()")
+        cur.execute("CALL update_due_loans()")
 
         conn.commit()
         cur.close()
