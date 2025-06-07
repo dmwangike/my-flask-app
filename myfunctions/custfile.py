@@ -149,7 +149,7 @@ def update_trx_details_logic():
                       FROM portfolio a
                       JOIN internal_accounts b ON b.account_number = '1006'
                       WHERE a.membership_number = %s AND account_type = 'Savings';
-                      #FOR UPDATE OF a, b; Disabled due to conflict with handle_transaction_insert Trigger on the DB
+                      -- FOR UPDATE OF a, b; Disabled due to conflict with handle_transaction_insert Trigger on the DB
                 """
                 cursor.execute(cust_query, (cust_membid,))
                 existing_trx = cursor.fetchone()
