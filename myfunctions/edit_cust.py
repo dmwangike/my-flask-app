@@ -851,6 +851,7 @@ def loan_form_logic():
             cur.execute("UPDATE internal_accounts SET balance = balance + %s WHERE account_number = '1002'", (appraisal_fee,))
             cur.execute("UPDATE internal_accounts SET balance = balance + %s WHERE account_number = '1001'", (amount_borrowed,))
             cur.execute("UPDATE internal_accounts SET balance = balance + %s WHERE account_number = '1006'", (disbursed_amount,))
+            cur.execute("UPDATE internal_accounts SET balance = balance - %s WHERE account_number = '1007'", (amount_borrowed,))
             # Create loan schedule
             def end_of_month(year, month):
                 day = calendar.monthrange(year, month)[1]
