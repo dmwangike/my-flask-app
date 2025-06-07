@@ -769,8 +769,7 @@ def loan_form_logic():
                 SELECT 1 FROM loan_accounts
                 WHERE member_number = %s AND pending_amount <> 0
                 LIMIT 1
-            """, (member_number, pending_amount, loan_tenure, last_update_date.date(),
-                  pending_amount, cust_mgr, disbursement_date.date()))
+            """, (member_number,))
 
             if cur.fetchone():
                 flash("Duplicate loan record detected.", "warning")
