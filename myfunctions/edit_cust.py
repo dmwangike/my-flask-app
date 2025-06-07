@@ -869,10 +869,10 @@ def loan_form_logic():
                 cur.execute("""
                     INSERT INTO loan_schedules (
                         instalment_number, instalment_amount, membership_number,
-                        loan_account, due_date
+                        loan_account,pending_instalment, due_date
                     )
-                    VALUES (%s, %s, %s, %s, %s)
-                """, (i + 1, instalment_amount, member_number, loan_account, due_date))
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                """, (i + 1, instalment_amount, member_number, loan_account,instalment_amount, due_date))
 
             # Finalize
             conn.commit()

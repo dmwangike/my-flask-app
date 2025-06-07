@@ -88,7 +88,7 @@ BEGIN
 
         -- Step 3: Collect Instalments if balance remains
         IF savings_balance > 0 THEN
-            SELECT COALESCE(SUM(instalment_amount), 0)
+            SELECT COALESCE(SUM(pending_instalment), 0)
             INTO inst_total
             FROM loan_schedules
             WHERE loan_account = rec.loan_account AND status = 'Due';
@@ -108,6 +108,11 @@ BEGIN
                 UPDATE internal_accounts 
                 SET balance = balance + inst_total
                 WHERE account_number = '1001'; 
+
+
+                UPDATE internal_accounts 
+                SET balance = balance - inst_total
+                WHERE account_number = '1007'; 
 
                 UPDATE loan_schedules
                 SET pending_instalment = 0, status = 'Paid',last_updated = current_date::date
@@ -157,6 +162,10 @@ BEGIN
                 UPDATE internal_accounts 
                 SET balance = balance + savings_balance
                 WHERE account_number = '1001'; 
+
+                UPDATE internal_accounts 
+                SET balance = balance - savings_balance
+                WHERE account_number = '1007'; 
 				
 		UPDATE loan_accounts 
 		SET pending_amount = pending_amount + savings_balance
