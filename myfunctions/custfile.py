@@ -218,7 +218,7 @@ def update_trx_details_logic():
                             SET balance = 0
                             WHERE account_no = %s
                         """
-                        cursor.execute(update_query3, (cust_acct))                        
+                        cursor.execute(update_query3, (cust_acct,))                        
                         # Commit transaction
                         conn.commit()
 
