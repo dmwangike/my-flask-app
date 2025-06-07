@@ -660,7 +660,7 @@ def fetch_guarantor_name_logic():
             SELECT CUST_NAME, balance 
             FROM MEMBERS A 
             JOIN portfolio B USING (MEMBERSHIP_NUMBER)
-            WHERE account_type = 'Savings' AND MEMBERSHIP_NUMBER = %s
+            WHERE account_type = 'Deposits' AND MEMBERSHIP_NUMBER = %s
         """, (member_number,))
         row = cur.fetchone()
     finally:
@@ -689,7 +689,7 @@ def fetch_member_balance_logic():
     cur.execute("""
         SELECT A.MEMBERSHIP_NUMBER, A.CUST_NAME, B.BALANCE
         FROM MEMBERS A JOIN PORTFOLIO B USING(MEMBERSHIP_NUMBER)
-        WHERE B.ACCOUNT_TYPE = 'Savings' AND A.MEMBERSHIP_NUMBER = %s
+        WHERE B.ACCOUNT_TYPE = 'Deposits' AND A.MEMBERSHIP_NUMBER = %s
     """, (member_number,))
     row = cur.fetchone()
     cur.close()
@@ -767,9 +767,7 @@ def loan_form_logic():
             # Duplicate loan check
             cur.execute("""
                 SELECT 1 FROM loan_accounts
-                WHERE member_number = %s AND amount_borrowed = %s AND tenure = %s
-                  AND last_update_date::DATE = %s AND pending_amount = %s
-                  AND disbursed_by = %s AND disbursement_date::DATE = %s
+                WHERE member_number = %s AND pending_amount <> 0
                 LIMIT 1
             """, (member_number, pending_amount, loan_tenure, last_update_date.date(),
                   pending_amount, cust_mgr, disbursement_date.date()))

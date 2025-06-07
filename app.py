@@ -16,7 +16,7 @@ from forms import  CMSForm,ReportsForm, CustDetailForm,EnrichForm,UpdateTRXForm,
 from myfunctions.custfile import enrich_cust_details_logic, capture_cust,get_db_connection,get_customer_name_logic,get_trx_details_logic,update_trx_details_logic,display_mini_statement_logic
 
 from myfunctions.receipt import receipt_customer
-from myfunctions.custwithdraw import  queue_withdr_logic,get_with_details_logic,generate_withdrawal_logic,recon_purchases_logic,audit_report_logic
+from myfunctions.reports import  audit_report_logic
 from myfunctions.edit_cust import amend_cust_contacts_logic,get_amend_cust_contact_logic,edit_bnk_details_logic,get_edit_bnk_details_logic,get_edit_kyc_details_logic,edit_kyc_details_logic,add_related_party_logic,get_edit_related_party_logic,edit_related_party_logic,fetch_member_logic,assign_beneficiary_allocations_logic,fetch_guarantor_name_logic,fetch_member_balance_logic,loan_form_logic,get_cust_details_logic
 from sqlalchemy import create_engine
 from flask_wtf import FlaskForm
@@ -48,7 +48,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
-from myfunctions.localpkg import generate_statements_logic,create_date_folder,create_bank_statement_revised
+#from myfunctions.localpkg import generate_statements_logic,create_date_folder,create_bank_statement_revised
 from extensions import mail
 from io import BytesIO
 from reportlab.lib.utils import ImageReader
@@ -862,6 +862,7 @@ def generate_statement():
         FROM transactions T
         JOIN portfolio P ON T.account_number = P.account_no
         WHERE account_type = 'Savings' AND P.membership_number = %s
+        ORDER BY trxid
     """, (member_number,))
     transactions = cur.fetchall()
 

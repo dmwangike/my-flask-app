@@ -29,6 +29,10 @@ BEGIN
             SELECT account_no, balance INTO deposit_acct, deposit_bal
             FROM portfolio
             WHERE account_type = 'Deposits' AND membership_number = mem_no;
+            
+            UPDATE portfolio
+            SET balance = 0
+            WHERE membership_number = mem_no AND account_type = 'Savings';            
 
             -- Move money out of savings
             INSERT INTO transactions(account_number, narrative, amount, running_balance, entered_by, posted)
@@ -42,10 +46,6 @@ BEGIN
             UPDATE portfolio
             SET balance = balance + savings_balance
             WHERE membership_number = mem_no AND account_type = 'Deposits';
-
-            UPDATE portfolio
-            SET balance = 0
-            WHERE account_no = savings_account_no;
 
         ELSE
             -- If account is linked to a due loan, execute procedure
