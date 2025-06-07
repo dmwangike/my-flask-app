@@ -149,7 +149,7 @@ def update_trx_details_logic():
                       FROM portfolio a
                       JOIN internal_accounts b ON b.account_number = '1006'
                       WHERE a.membership_number = %s AND account_type = 'Savings';
-                      -- FOR UPDATE OF a, b; Disabled due to conflict with handle_transaction_insert Trigger on the DB
+                      FOR UPDATE OF a, b; Disabled due to conflict with handle_transaction_insert Trigger on the DB
                 """
                 cursor.execute(cust_query, (cust_membid,))
                 existing_trx = cursor.fetchone()
@@ -211,6 +211,14 @@ def update_trx_details_logic():
                             WHERE account_number = %s
                         """
                         cursor.execute(update_query1, (int_new_bal, int_acct))
+                        
+                        # Update portfolio balance: Customer leg Return the balance to zero after all transactions noting handle_transaction_insert trigger.
+                        update_query3 = """
+                            UPDATE portfolio
+                            SET balance = 0
+                            WHERE account_no = %s
+                        """
+                        cursor.execute(update_query3, (cust_acct))                        
                         # Commit transaction
                         conn.commit()
 
