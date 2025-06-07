@@ -141,7 +141,7 @@ BEGIN
                         remaining_inst_total := remaining_inst_total - ls_rec.instalment_amount;
                     ELSE
                         UPDATE loan_schedules
-                        SET pending_instalment = instalment_amount - remaining_inst_total,last_updated = current_date::date
+                        SET pending_instalment = pending_instalment - remaining_inst_total,last_updated = current_date::date
                         WHERE loan_account = ls_rec.loan_account AND due_date = ls_rec.due_date;
 
                         remaining_inst_total := 0;

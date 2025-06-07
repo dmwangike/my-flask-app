@@ -267,7 +267,7 @@ def display_mini_statement_logic():
 
     if not rows:
         flash("No transactions found for that member.", "warning")
-        return redirect(url_for('some_route_name'))  # Replace with your actual route
+        return redirect(url_for('deposits'))  # Replace with your actual route
 
     # Fetch column names and map to dicts
     colnames = [desc[0] for desc in cursor.description]
