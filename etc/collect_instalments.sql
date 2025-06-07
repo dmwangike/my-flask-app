@@ -60,7 +60,7 @@ BEGIN
                     accrued_interest = 0
                 WHERE loan_account = rec.loan_account;
 
-                savings_balance := savings_balance - rec.interest_due;
+                savings_balance := savings_balance + rec.interest_due;
 
             ELSIF savings_balance < rec.accrued_interest THEN
                 -- Partial interest recovery
@@ -79,7 +79,7 @@ BEGIN
                 WHERE account_no = savings_account_no;
 
                 UPDATE interest_accounts
-                SET interest_due = interest_due - savings_balance
+                SET interest_due = interest_due + savings_balance
                 WHERE loan_account = rec.loan_account;
 
                 savings_balance := 0;
@@ -99,7 +99,7 @@ BEGIN
                 VALUES (savings_account_no, 'Principal Instalment Recovered', inst_total * -1, savings_balance - inst_total,'SYSTEM', 'Y');
 
                 INSERT INTO transactions(account_number, narrative, amount, running_balance,entered_by, posted)
-                VALUES ('1001', savings_account_no, inst_total, interest_balance + savings_balance,'SYSTEM', 'Y');
+                VALUES ('1001', savings_account_no, inst_total, interest_balance + inst_total,'SYSTEM', 'Y');
 
                 UPDATE portfolio
                 SET balance = savings_balance - inst_total
@@ -113,8 +113,8 @@ BEGIN
                 SET pending_instalment = 0, status = 'Paid',last_updated = current_date::date
                 WHERE loan_account = rec.loan_account AND status = 'Due';
 				
-				UPDATE loan_accounts 
-				SET pending_amount = pending_amount + inst_total 
+		UPDATE loan_accounts 
+		SET pending_amount = pending_amount + inst_total 
                 WHERE  loan_account = rec.loan_account;
 
                 savings_balance := savings_balance - inst_total;
@@ -158,8 +158,8 @@ BEGIN
                 SET balance = balance + savings_balance
                 WHERE account_number = '1001'; 
 				
-				UPDATE loan_accounts 
-				SET pending_amount = pending_amount + savings_balance
+		UPDATE loan_accounts 
+		SET pending_amount = pending_amount + savings_balance
                 WHERE loan_account = rec.loan_account;
 
                 savings_balance := 0;

@@ -44,6 +44,11 @@ BEGIN
             UPDATE portfolio
             SET balance = balance + savings_balance
             WHERE membership_number = mem_no AND account_type = 'Deposits';
+            
+            
+            UPDATE portfolio
+            SET balance = 0
+            WHERE membership_number = mem_no AND account_type = 'Savings';            
 
         ELSE
             -- If account is linked to a due loan, execute procedure

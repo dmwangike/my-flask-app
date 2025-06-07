@@ -148,8 +148,8 @@ def update_trx_details_logic():
                       SELECT a.balance AS cust_bal, a.account_no AS cust_acct,b.balance AS int_bal, b.account_number AS int_acct
                       FROM portfolio a
                       JOIN internal_accounts b ON b.account_number = '1006'
-                      WHERE a.membership_number = %s AND account_type = 'Savings'
-                      FOR UPDATE OF a, b; 
+                      WHERE a.membership_number = %s AND account_type = 'Savings';
+                      --FOR UPDATE OF a, b; 
                 """
                 cursor.execute(cust_query, (cust_membid,))
                 existing_trx = cursor.fetchone()
@@ -177,6 +177,23 @@ def update_trx_details_logic():
                     if duplicate:
                         flash('Duplicate transaction detected. This transaction already exists.', 'warning')
                     else:
+                    
+                    
+                        # Update portfolio balance: Customer leg
+                        update_query = """
+                            UPDATE portfolio
+                            SET balance = %s
+                            WHERE account_no = %s
+                        """
+                        cursor.execute(update_query, (new_bal, cust_acct))
+
+                        # Update Internal balance: Internal Account leg
+                        update_query1 = """
+                            UPDATE internal_accounts
+                            SET balance = %s
+                            WHERE account_number = %s
+                        """
+                        cursor.execute(update_query1, (int_new_bal, int_acct))                    
                         # Insert new transaction: Customer leg
                         insert_query = """
                             INSERT INTO transactions 
@@ -196,29 +213,9 @@ def update_trx_details_logic():
                             int_acct, cust_tranid, cust_amount * -1, int_new_bal,int_post,cust_mgr, client_ip
                         ))
 
-                        # Update portfolio balance: Customer leg
-                        update_query = """
-                            UPDATE portfolio
-                            SET balance = %s
-                            WHERE account_no = %s
-                        """
-                        cursor.execute(update_query, (new_bal, cust_acct))
 
-                        # Update Internal balance: Internal Account leg
-                        update_query1 = """
-                            UPDATE internal_accounts
-                            SET balance = %s
-                            WHERE account_number = %s
-                        """
-                        cursor.execute(update_query1, (int_new_bal, int_acct))
                         
-                        # Update portfolio balance: Customer leg Return the balance to zero after all transactions noting handle_transaction_insert trigger.
-                        update_query3 = """
-                            UPDATE portfolio
-                            SET balance = 0
-                            WHERE account_no = %s
-                        """
-                        cursor.execute(update_query3, (cust_acct,))                        
+                      
                         # Commit transaction
                         conn.commit()
 
