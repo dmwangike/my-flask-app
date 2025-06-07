@@ -258,7 +258,7 @@ def display_mini_statement_logic():
         FROM transactions a
         JOIN Portfolio b ON a.account_number = b.account_no AND account_type = 'Savings'
         JOIN MEMBERS c ON c.membership_number = b.membership_number
-        WHERE c.membership_number = %s
+        WHERE c.membership_number = %s AND a.amount <> 0
         ORDER BY trxid DESC
         LIMIT 10
     """

@@ -493,11 +493,7 @@ def display_mini_statement():
     return display_mini_statement_logic() 
   
     
-@app.route('/generate_statements', methods=['GET', 'POST'])
-@login_required
-def generate_statements():
-    generate_statements_logic()  
-    return redirect(url_for('home'))  
+ 
             
 
 @app.route('/enquire_cust_details', methods=['GET', 'POST'])
@@ -865,7 +861,7 @@ def generate_statement():
                T.amount, T.running_balance, T.trxid
         FROM transactions T
         JOIN portfolio P ON T.account_number = P.account_no
-        WHERE account_type = 'Savings' AND P.membership_number = %s
+        WHERE account_type = 'Savings' AND P.membership_number = %s AND T.amount <> 0
         ORDER BY trxid
     """, (member_number,))
     transactions = cur.fetchall()
