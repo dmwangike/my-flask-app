@@ -891,4 +891,23 @@ def loan_form_logic():
                 conn.close()
 
     return render_template("loan_form.html", form=form)
+    
+    
+def update_loan_status_logic():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+
+        # Call the stored procedure
+        cur.execute("CALL update_loan_status()")
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        flash('Loan status updated successfully.', 'success')
+    except Exception as e:
+        flash(f'Error updating loan status: {e}', 'danger')
+
+    return redirect(url_for('loans'))
 

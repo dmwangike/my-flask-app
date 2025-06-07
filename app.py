@@ -17,7 +17,7 @@ from myfunctions.custfile import enrich_cust_details_logic, capture_cust,get_db_
 
 from myfunctions.receipt import receipt_customer
 from myfunctions.reports import  audit_report_logic
-from myfunctions.edit_cust import amend_cust_contacts_logic,get_amend_cust_contact_logic,edit_bnk_details_logic,get_edit_bnk_details_logic,get_edit_kyc_details_logic,edit_kyc_details_logic,add_related_party_logic,get_edit_related_party_logic,edit_related_party_logic,fetch_member_logic,assign_beneficiary_allocations_logic,fetch_guarantor_name_logic,fetch_member_balance_logic,loan_form_logic,get_cust_details_logic
+from myfunctions.edit_cust import amend_cust_contacts_logic,get_amend_cust_contact_logic,edit_bnk_details_logic,get_edit_bnk_details_logic,get_edit_kyc_details_logic,edit_kyc_details_logic,add_related_party_logic,get_edit_related_party_logic,edit_related_party_logic,fetch_member_logic,assign_beneficiary_allocations_logic,fetch_guarantor_name_logic,fetch_member_balance_logic,loan_form_logic,get_cust_details_logic,update_loan_status_logic
 from sqlalchemy import create_engine
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField,PasswordField,validators,FloatField,DateField, SelectField
@@ -433,6 +433,10 @@ def loans():
     form = CMSForm()
     return render_template('loans.html', title='LON', posts=post3,form=form )
     
+@app.route('/update_loan_status', methods=['GET','POST'])
+@login_required
+def update_loan_status():
+    return update_loan_status_logic()    
  
 
 @app.route('/fetch_guarantor_name', methods=['GET', 'POST'])

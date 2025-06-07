@@ -7,8 +7,8 @@ DECLARE
     deposit_bal NUMERIC;
     mem_no TEXT;
 BEGIN
-    -- Process only for non-SYSTEM inserts
-    IF NEW.entered_by <> 'SYSTEM' AND NEW.account_number LIKE '%SV' THEN
+    -- Process only for non-SYSTEM  and non-Loan Disbursement inserts
+    IF NEW.entered_by <> 'SYSTEM' AND NEW.account_number LIKE '%SV'  AND NOT NEW.narrative  ~ '^M\d{4,5}LN\d{1,4}_(Appraisal_fee|Disbursement|Drawdown)$'THEN
         savings_account_no := NEW.account_number;
         savings_balance := NEW.amount;
         -- Get membership number  from the savings account
