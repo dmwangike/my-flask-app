@@ -1,0 +1,12 @@
+{
+  "build": {
+    "env": "python"
+  },
+  "jobs": [
+    {
+      "name": "Daily DB Procedure Job",
+      "schedule": "0 4 * * *",
+      "command": "python run_db_job.py"
+    }
+  ]
+}
