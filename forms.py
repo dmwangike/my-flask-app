@@ -209,7 +209,8 @@ class editRTDForm(FlaskForm):
                            render_kw={"readonly": True}) 
     rphone = StringField('PARTY_PHONE')
     remail = StringField('PARTY_EMAIL')
-    rrole = StringField('PARTY_ROLE')    
+    
+    rrole = SelectField('PARTY_ROLE', validators=[DataRequired()],choices=[('signatory', 'Signatory'),('next_of_kin', 'Next of Kin'),('beneficiary', 'Beneficiary')],coerce=str  )
     rstatus = SelectField('PARTY_STATUS', choices=[('active', 'Active'), ('inactive', 'Inactive'), ('suspended', 'Suspended'), ('exited', 'Exited')])
 
     
@@ -233,8 +234,11 @@ class editRTDForm(FlaskForm):
             self.cname.data = result[2]  
             self.rname.data = result[3]              
             self.rphone.data = result[4] 
-            self.remail.data = result[5] 
-            self.rrole.data = result[6] 
+            self.remail.data = result[5]
+            # ROLE
+            if result[6] not in [choice[0] for choice in self.rrole.choices]:
+                self.rrole.choices.append((result[6], result[6].capitalize()))
+            self.rrole.data = result[6]            
             # STATUS
             if result[7] not in [choice[0] for choice in self.rstatus.choices]:
                 self.rstatus.choices.append((result[7], result[7].capitalize()))
