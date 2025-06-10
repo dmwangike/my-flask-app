@@ -911,4 +911,57 @@ def update_loan_status_logic():
         flash(f'Error updating loan status: {e}', 'danger')
 
     return redirect(url_for('loans'))
+    
+    
+# Function fill cust query
+def get_loan_details_logic():
+    cmemberid = request.form.get('cmemberid')
+    
+    # Validate input
+    if not cmemberid or not cmemberid.isalnum():
+        return jsonify({'error': 'Invalid unique ID provided'}), 400
+    
+    try:
+        # Database connection and query execution
+        with get_db_connection() as conn:
+            with conn.cursor() as cursor:
+                query = """
+                        SELECT 
+        cust_name,
+        a.account_no AS deposit_account,
+        a.balance AS deposits,
+        COALESCE(b.loan_account, 'None') AS loan_account,
+        COALESCE(b.pending_amount, 0) AS loan,
+        COALESCE(c.interest_account, 'None') AS interest_account,
+        COALESCE(c.interest_due, 0) AS interest
+    FROM portfolio a JOIN MEMBERS m on m.membership_number =  a.membership_number
+    LEFT OUTER JOIN loan_accounts b 
+        ON b.member_number = a.membership_number AND b.pending_amount <> 0
+    LEFT OUTER JOIN interest_accounts c 
+        ON c.membership_number = a.membership_number AND c.interest_due <> 0
+    WHERE a.account_type = 'Deposits' and a.membership_number  = %s;
+                """
+                cursor.execute(query, (cmemberid,))
+                result = cursor.fetchone()
+        
+        # Handle results
+        if result:
+            return jsonify({
+                'cname': result[0],
+                'depact': result[1],
+                'depamt': result[2],
+                'lonact': result[3],
+                'lonamt': result[4],
+                'intact': result[5],
+                'intamt': result[6],
+            })
+        else:
+            return jsonify({'error': 'No data found for the given unique ID'}), 404
+    
+    except Exception as e:
+        # Log the exception (not shown here) and return a server error response
+        return jsonify({'error': 'An error occurred while processing your request'}), 500        
+                
+
+
 

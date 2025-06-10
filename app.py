@@ -11,13 +11,13 @@ load_dotenv()
 from flask import Flask, render_template, url_for, flash, redirect,request,jsonify,send_file, make_response,abort, current_app 
 from datetime import datetime, timedelta
 from werkzeug.middleware.proxy_fix import ProxyFix
-from forms import  CMSForm,ReportsForm, CustDetailForm,EnrichForm,UpdateTRXForm,custWDRForm,populate_bank_choices,PageSelectionForm,amendCNTForm,editBNKForm,editKYCForm,HolsForm,cusdKYCForm
+from forms import  CMSForm,ReportsForm, CustDetailForm,EnrichForm,UpdateTRXForm,custWDRForm,populate_bank_choices,PageSelectionForm,amendCNTForm,editBNKForm,editKYCForm,HolsForm,cusdKYCForm,cusdLONForm
 
 from myfunctions.custfile import enrich_cust_details_logic, capture_cust,get_db_connection,get_customer_name_logic,get_trx_details_logic,update_trx_details_logic,display_mini_statement_logic
 
 from myfunctions.receipt import receipt_customer
 from myfunctions.reports import  audit_report_logic
-from myfunctions.edit_cust import amend_cust_contacts_logic,get_amend_cust_contact_logic,edit_bnk_details_logic,get_edit_bnk_details_logic,get_edit_kyc_details_logic,edit_kyc_details_logic,add_related_party_logic,get_edit_related_party_logic,edit_related_party_logic,fetch_member_logic,assign_beneficiary_allocations_logic,fetch_guarantor_name_logic,fetch_member_balance_logic,loan_form_logic,get_cust_details_logic,update_loan_status_logic
+from myfunctions.edit_cust import amend_cust_contacts_logic,get_amend_cust_contact_logic,edit_bnk_details_logic,get_edit_bnk_details_logic,get_edit_kyc_details_logic,edit_kyc_details_logic,add_related_party_logic,get_edit_related_party_logic,edit_related_party_logic,fetch_member_logic,assign_beneficiary_allocations_logic,fetch_guarantor_name_logic,fetch_member_balance_logic,loan_form_logic,get_cust_details_logic,update_loan_status_logic, get_loan_details_logic
 from sqlalchemy import create_engine
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField,PasswordField,validators,FloatField,DateField, SelectField
@@ -472,6 +472,12 @@ def get_edit_kyc_details():
 @login_required 
 def get_cust_details():
     return get_cust_details_logic() 
+    
+    
+@app.route('/get_loan_details', methods=['GET', 'POST'])
+@login_required 
+def get_loan_details():
+    return get_loan_details_logic() 
 
 
     
@@ -501,7 +507,10 @@ def enquire_cust_details():
     form = cusdKYCForm()
     return render_template('enquire_cust_details.html', form=form)
 
-
+@app.route('/enquire_loan_details', methods=['GET', 'POST'])
+def enquire_loan_details():
+    form = cusdLONForm()
+    return render_template('enquire_loan_details.html', form=form)
     
 
     
