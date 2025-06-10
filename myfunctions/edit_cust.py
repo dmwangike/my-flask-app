@@ -913,7 +913,7 @@ def update_loan_status_logic():
     return redirect(url_for('loans'))
     
     
-# Function fill cust query
+# Function fill loan query
 def get_loan_details_logic():
     cmemberid = request.form.get('cmemberid')
     
