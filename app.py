@@ -1013,6 +1013,156 @@ def generate_statement():
     return redirect(url_for('home'))
 
 
+def generate_and_email_statement(member_number):
+    conn = get_db_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        SELECT membership_number, cust_name, pref_phone, congregation, pref_email
+        FROM MEMBERS WHERE membership_number = %s
+    """, (member_number,))
+    header = cur.fetchone()
+
+    if not header:
+        cur.close()
+        conn.close()
+        return f"Member {member_number} not found."
+
+    cur.execute("""
+        SELECT P.membership_number, T.account_number, T.trans_date::DATE, T.narrative,
+               T.amount, T.running_balance, T.trxid
+        FROM transactions T
+        JOIN portfolio P ON T.account_number = P.account_no
+        WHERE account_type = 'Savings' AND P.membership_number = %s AND T.amount <> 0
+        ORDER BY trxid
+    """, (member_number,))
+    transactions = cur.fetchall()
+
+    cur.execute("""
+        SELECT membership_number, account_type, ACCOUNT_NO, BALANCE FROM portfolio 
+        WHERE account_type = 'Deposits' AND membership_number = %s
+        UNION
+        SELECT MEMBER_NUMBER, 'Loans', LOAN_ACCOUNT, PENDING_AMOUNT FROM LOAN_ACCOUNTS 
+        WHERE PENDING_AMOUNT <> 0 AND MEMBER_NUMBER = %s
+        UNION
+        SELECT MEMBERSHIP_NUMBER, 'Interest Due', INTEREST_ACCOUNT, INTEREST_DUE 
+        FROM INTEREST_ACCOUNTS 
+        WHERE INTEREST_DUE <> 0 AND MEMBERSHIP_NUMBER = %s
+    """, (member_number, member_number, member_number))
+    summary = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    # --- Generate PDF (same code as before, using `header`, `transactions`, `summary`) ---
+    buffer = BytesIO()
+    p = canvas.Canvas(buffer, pagesize=A4)
+    width, height = A4
+
+    logo_path = "static/logo.png"
+    p.drawImage(ImageReader(logo_path), 40, height - 130, width=100, height=50, preserveAspectRatio=True, mask='auto')
+    p.setFont("Helvetica-Bold", 14)
+    p.drawString(160, height - 100, "Member Statement")
+    p.setFont("Helvetica", 10)
+    p.drawString(160, height - 115, f"Date: {datetime.now().strftime('%Y-%m-%d')}")
+    y = height - 150
+    p.setFont("Helvetica", 10)
+    p.drawString(40, y, f"Member #: {header[0] or ''}")
+    p.drawString(240, y, f"Name: {header[1] or ''}")
+    y -= 15
+    p.drawString(40, y, f"Phone: {header[2] or ''}")
+    p.drawString(240, y, f"Congregation: {header[3] or ''}")
+    y -= 30
+
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(40, y, "Transactions:")
+    y -= 20
+
+    if not transactions:
+        p.setFont("Helvetica", 9)
+        p.drawString(50, y, "No transactions available.")
+        y -= 20
+    else:
+        data = [["DATE", "NARRATION", "AMOUNT", "BALANCE"]]
+        for t in transactions:
+            data.append([
+                t[2].strftime('%Y-%m-%d') if t[2] else "",
+                t[3] or "",
+                f"{t[4]:,.2f}",
+                f"{t[5]:,.2f}"
+            ])
+        table = Table(data, colWidths=[80, 230, 90, 90])
+        table.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
+            ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 5),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        table.wrapOn(p, width - 80, height)
+        table.drawOn(p, 40, y - (len(data) * 18))
+        y -= (len(data) * 18) + 30
+
+    p.setFont("Helvetica-Bold", 11)
+    p.drawString(40, y, "Summary:")
+    y -= 20
+
+    if not summary:
+        p.setFont("Helvetica", 9)
+        p.drawString(50, y, "No summary data available.")
+        y -= 20
+    else:
+        sdata = [["ACCOUNT_TYPE", "ACCOUNT_NO", "BALANCE"]]
+        for s in summary:
+            sdata.append([s[1], s[2], f"{s[3]:,.2f}" if s[3] else ""])
+        stable = Table(sdata, colWidths=[150, 180, 100])
+        stable.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+            ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
+            ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
+        ]))
+        stable.wrapOn(p, width - 80, height)
+        stable.drawOn(p, 40, y - (len(sdata) * 18))
+
+    p.setFont("Helvetica-BoldOblique", 11)
+    p.drawString(230, 30, "GROWING TOGETHER")
+
+    p.showPage()
+    p.save()
+    buffer.seek(0)
+
+    recipients = [header[4]] if header[4] else []
+    cc_list = ['dmwangike@yahoo.com']
+    msg = Message(subject="Member Statement",
+                  sender="noreply@example.com",
+                  recipients=recipients or cc_list,
+                  cc=cc_list,
+                  body=f"Attached is the member statement for {header[1]} ({header[0]}).")
+    msg.attach(f"{member_number}_statement.pdf", "application/pdf", buffer.read())
+
+    try:
+        mail.send(msg)
+        return f"Sent to {header[4] or '[no email]'}"
+    except Exception as e:
+        return f"Failed to send to {header[4] or '[no email]'}: {str(e)}"
+
+@app.route('/generate_all_statements', methods=['GET'])
+def generate_all_statements():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT membership_number FROM MEMBERS")
+    members = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    results = []
+    for row in members:
+        member_number = row[0]
+        result = generate_and_email_statement(member_number)
+        results.append(f"{member_number}: {result}")
+
+    flash(f"Processed {len(members)} member statements.", "info")
+    return render_template("bulk_results.html", results=results)
 
 
 
