@@ -4,7 +4,7 @@
     <form method="POST">
         {{ form.hidden_tag() }}
         <fieldset class="form-group">
-            <legend class="border-bottom mb-4">Beneficiary Allocation</legend>
+            <legend class="border-bottom mb-4">Related Parties</legend>
 
             <div class="form-group">
                 {{ form.member_number.label(class="form-control-label") }}
@@ -17,7 +17,7 @@
             </div>
 
             <h5>Beneficiaries</h5>
-            <table class="table" id="beneficiaries_table">
+            <table class="table" id="Parties_table">
                 <thead>
                     <tr>
                         <th>Party ID</th>
@@ -27,19 +27,11 @@
                     </tr>
                 </thead>
                 <tbody></tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="2"><strong>Total</strong></td>
-                        <td><input type="text" class="form-control" id="total_percentage" readonly></td>
-                    </tr>
-                </tfoot>
             </table>
         </fieldset>
-        <div class="form-group">
-            {{ form.submit(class="btn btn-outline-success") }}
-        </div>
+
             <div class="form-group">
-		        <a href="{{ url_for('home') }}" class="btn btn-outline-success" style="width: 300px;">Cancel</a>
+		        <a href="{{ url_for('home') }}" class="btn btn-outline-success" style="width: 300px;">Return Home</a>
     </div>
     </form>
 </div>
