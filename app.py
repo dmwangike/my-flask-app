@@ -11,7 +11,7 @@ load_dotenv()
 from flask import Flask, render_template, url_for, flash, redirect,request,jsonify,send_file, make_response,abort, current_app 
 from datetime import datetime, timedelta
 from werkzeug.middleware.proxy_fix import ProxyFix
-from forms import  CMSForm,ReportsForm, CustDetailForm,EnrichForm,UpdateTRXForm,custWDRForm,populate_bank_choices,PageSelectionForm,amendCNTForm,editBNKForm,editKYCForm,HolsForm,cusdKYCForm,cusdLONForm
+from forms import  CMSForm,ReportsForm, CustDetailForm,EnrichForm,UpdateTRXForm,custWDRForm,populate_bank_choices,PageSelectionForm,amendCNTForm,editBNKForm,editKYCForm,cusdKYCForm,cusdLONForm
 
 from myfunctions.custfile import enrich_cust_details_logic, capture_cust,get_db_connection,get_customer_name_logic,get_trx_details_logic,update_trx_details_logic,display_mini_statement_logic
 
@@ -532,7 +532,7 @@ def fetch_party():
 #View Party details    
 @app.route('/view_party', methods=['GET', 'POST'])
 @login_required
-def view_beneficiaries():
+def view_party():
     form = BeneficiaryForm()
     return render_template('view_party.html', form=form)
     

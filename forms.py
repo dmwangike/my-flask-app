@@ -434,12 +434,7 @@ class PageSelectionForm(FlaskForm):
         validators=[DataRequired()]
     ) 
     
-class HolsForm(FlaskForm):
-    cstartd = DateField('START_DATE', format='%Y-%m-%d')
-    cendd = DateField('END_DATE', format='%Y-%m-%d', validators=[Optional()])
-    cname = StringField('HOLIDAY')
-   
-    submit = SubmitField('Submit')    
+    
 
 class ReportsForm(FlaskForm):
 
