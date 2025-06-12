@@ -27,15 +27,17 @@
                     </tr>
                 </thead>
                 <tbody></tbody>
-                                <tfoot>
-				                    <tr>
-				                        <td colspan="2"><strong>Total</strong></td>
-				                        <td><input type="text" class="form-control" id="total_percentage" readonly></td>
-				                    </tr>
-				                </tfoot>
-
+                <tfoot>
+                    <tr>
+                        <td colspan="2"><strong>Total</strong></td>
+                        <td><input type="text" class="form-control" id="total_percentage" readonly></td>
+                    </tr>
+                </tfoot>
             </table>
         </fieldset>
+        <div class="form-group">
+            {{ form.submit(class="btn btn-outline-success") }}
+        </div>
 
             <div class="form-group">
 		        <a href="{{ url_for('home') }}" class="btn btn-outline-success" style="width: 300px;">Return Home</a>
