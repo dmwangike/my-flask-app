@@ -617,7 +617,7 @@ def fetch_party_logic():
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     cur.execute("""
-        SELECT A.MEMBERSHIP_NUMBER, A.CUST_NAME, B.PARTYID, B.PARTY_NAME,B.PARTY_ROLE,B.PERCENTAGE
+        SELECT A.MEMBERSHIP_NUMBER, A.CUST_NAME, B.PARTYID, B.PARTY_NAME,B.PARTY_ROLE,COALESCE(B.PERCENTAGE,0) PERCENTAGE
         FROM MEMBERS A
         JOIN RELATED_PARTY B USING(MEMBERSHIP_NUMBER)
         WHERE   A.MEMBERSHIP_NUMBER = %s
@@ -636,7 +636,41 @@ def fetch_party_logic():
     return jsonify({"cust_name": cust_name, "parties": parties})   
     
     
+def view_party_logic():
+    form = BeneficiaryForm()
 
+    if form.validate_on_submit():
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cust_mgr = current_user.username
+        client_ip = request.remote_addr
+        for key in request.form:
+            if key.startswith('percentage_'):
+                party_id = key.split('_')[1]
+                percentage = request.form.get(key)
+                if percentage:
+                    try:
+                        cur.execute("""
+                            UPDATE RELATED_PARTY
+                            SET PERCENTAGE = %s
+                            WHERE PARTYID = %s
+                        """, (float(percentage), party_id))
+                        cur.execute(f"SET myapp.client_ip = '{client_ip}';")
+                        cur.execute(f"SET myapp.cust_mgr = '{cust_mgr}';")  
+                    except ValueError:
+                        continue
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+
+        return redirect(url_for('home'))
+
+    return render_template('view_party.html', form=form)
+    
+    
+    
     
     
 def assign_beneficiary_allocations_logic():
