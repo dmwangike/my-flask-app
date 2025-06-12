@@ -430,7 +430,7 @@ class LoginForm(FlaskForm):
 class PageSelectionForm(FlaskForm):
     page_selection = SelectField(
         'Select Page', 
-        choices=[('amend_cust_contacts', 'Edit Member Contacts'), ('edit_bnk_details', 'Edit Bank Details'), ('edit_kyc_details', 'Edit Members KYC Details'), ('add_related_party', 'Add Related Party'), ('edit_related_party', 'Edit Related Party'), ('assign_beneficiary_allocations', 'Assign Beneficiary Allocations')],
+        choices=[('amend_cust_contacts', 'Edit Member Contacts'), ('edit_bnk_details', 'Edit Bank Details'), ('edit_kyc_details', 'Edit Members KYC Details'), ('add_related_party', 'Add Related Party'), ('edit_related_party', 'Edit Related Party'),('view_party', 'View Related Party'),  ('assign_beneficiary_allocations', 'Assign Beneficiary Allocations')],
         validators=[DataRequired()]
     ) 
     
