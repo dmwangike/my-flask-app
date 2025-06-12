@@ -610,6 +610,35 @@ def fetch_member_logic():
     return jsonify({"cust_name": cust_name, "parties": parties})
     
     
+def fetch_party_logic():
+    member_number = request.json.get('member_number')
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cur.execute("""
+        SELECT A.MEMBERSHIP_NUMBER, A.CUST_NAME, B.PARTYID, B.PARTY_NAME,B.PARTY_ROLE,B.PERCENTAGE
+        FROM MEMBERS A
+        JOIN RELATED_PARTY B USING(MEMBERSHIP_NUMBER)
+        WHERE   A.MEMBERSHIP_NUMBER = %s
+    """, (member_number,))
+
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    if not rows:
+        return jsonify({"error": "Member not found"}), 404
+
+    cust_name = rows[0]['cust_name']
+    parties = [{"party_id": r["partyid"], "party_name": r["party_name"], "party_role": r["party_role"], "percentage": r["percentage"]} for r in rows]
+
+    return jsonify({"cust_name": cust_name, "parties": parties})   
+    
+    
+
+    
+    
 def assign_beneficiary_allocations_logic():
     form = BeneficiaryForm()
 

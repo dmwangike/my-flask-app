@@ -363,6 +363,56 @@ def add_cache_control_headers(response):
     response.headers["Expires"] = "0"
     return response   
 
+
+
+
+@app.route("/define_holidays", methods=['GET', 'POST'])
+def define_holidays():
+    form = HolsForm()
+    regex = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+    
+    if request.method == 'POST' and form.validate_on_submit():
+        # Convert the date object to a string for regex matching
+        stdate = form.cstartd.data.strftime('%Y-%m-%d') if form.cstartd.data else ""
+        if regex.match(stdate):
+            endate = form.cendd.data.strftime('%Y-%m-%d') if form.cendd.data else stdate
+            holiday = form.cname.data
+            mod_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            cust_mgr = current_user.username
+
+            # Connect to the DB            
+            logging.debug("Connecting to database...")            
+            conn = get_db_connection()            
+            cursor = conn.cursor()            
+
+            # SQL INSERT statement to insert customer details            
+            insert_query = """            
+            INSERT INTO holidays (start_date, end_date, holiday, created_by, created_on)            
+            VALUES ( %s, %s, %s, %s, %s)            
+            """            
+            cursor.execute(insert_query, (stdate, endate, holiday, cust_mgr, mod_date))            
+
+            # Commit the transaction            
+            conn.commit()            
+            logging.debug("Data inserted into the holiday table...")            
+
+            # Close the connection            
+            cursor.close()            
+            conn.close()
+            flash('Holiday defined successfully!', 'success')
+            return redirect(url_for('home'))
+        #else:
+            #flash('Invalid date format for START_DATE. Please enter a valid date.', 'danger')
+    elif request.method == 'POST':
+        flash('Holiday not defined, please check your input.', 'secondary')
+
+    return render_template('define_holidays.html', title='Holidays', form=form)
+
+
+@app.route("/stmt", methods=['GET', 'POST'])
+def stmt():
+    form = ACCheckForm()
+    return render_template('stmt.html', title='Stmt',posts=post2,form=form)
     
 @app.route("/reports", methods=['GET', 'POST'])
 def reports():
@@ -523,18 +573,11 @@ def fetch_member():
     return fetch_member_logic()
     
     
-#Fetch Party details
+#Fetch Beneficiary details
 @app.route("/fetch_party", methods=["POST"])
 @login_required 
 def fetch_party():
     return fetch_party_logic()
-
-#View Party details    
-@app.route('/view_party', methods=['GET', 'POST'])
-@login_required
-def view_beneficiaries():
-    form = BeneficiaryForm()
-    return render_template('view_party.html', form=form)
     
 @app.route("/assign_beneficiary_allocations", methods=['GET','POST'])
 @login_required 
