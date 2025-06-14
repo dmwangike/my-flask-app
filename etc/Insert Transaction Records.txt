@@ -1,0 +1,26 @@
+import pandas as pd
+import psycopg2
+
+# Load CSV using pandas
+df = pd.read_csv('data.csv')
+
+# Connect to PostgreSQL
+conn = psycopg2.connect(
+    dbname='your_db',
+    user='your_user',
+    password='your_password',
+    host='localhost',
+    port='5432'
+)
+cur = conn.cursor()
+
+# Iterate through DataFrame and insert
+for _, row in df.iterrows():
+    cur.execute("""
+        INSERT INTO your_table (col1, col2, col3)
+        VALUES (%s, %s, %s)
+    """, (row['col1'], row['col2'], row['col3']))
+
+conn.commit()
+cur.close()
+conn.close()

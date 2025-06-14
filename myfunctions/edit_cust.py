@@ -997,7 +997,7 @@ def get_loan_details_logic():
         COALESCE(b.pending_amount, 0) AS loan,
         COALESCE(c.interest_account, 'None') AS interest_account,
         COALESCE(c.interest_due, 0) AS interest,
-        b.amount_borrowed AS ORIGINAL_LOAN
+        COALESCE(b.amount_borrowed,0) AS ORIGINAL_LOAN
     FROM portfolio a JOIN MEMBERS m on m.membership_number =  a.membership_number
     LEFT OUTER JOIN loan_accounts b 
         ON b.member_number = a.membership_number AND b.pending_amount <> 0
