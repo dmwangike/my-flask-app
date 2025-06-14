@@ -116,7 +116,7 @@ class editKYCForm(FlaskForm):
                              validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
     ctax = SelectField('TAX_EXEMPT', choices=[('true', 'True'), ('false', 'False')])
 
-    cstatus = SelectField('CUSTOMER_STATUS', choices=[('active', 'Active'), ('inactive', 'Inactive'), ('suspended', 'Suspended'), ('exited', 'Exited')])
+    cstatus = SelectField('CUSTOMER_STATUS', choices=[('active', 'Active'), ('inactive', 'Inactive'), ('deceased', 'Deceased'), ('exited', 'Exited')])
 
     
     submit = SubmitField('Submit')  
@@ -151,51 +151,28 @@ class editKYCForm(FlaskForm):
         cursor.close()
         conn.close()
         
-        
- 
-
 class cusdKYCForm(FlaskForm):
- 
-     cmemberid = StringField('MEMBER_NO',
-                             validators=[DataRequired(), Length(min=2, max=100)])
-     cname = StringField('CUSTOMER',
-                              validators=[DataRequired(), Length(min=2, max=200)], render_kw={"readonly": True})
-     ccustno = StringField('CUSTOMER_ID',
-                              validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
-     cphone = StringField('PHONE_NUMBER',
-                              validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
-     cemail = StringField('CUSTOMER_EMAIL',
-                              validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
-     ccongr = StringField('CONGREGATION',
-                              validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True})   
- 
-     def populate_cust(self):
-         conn = get_db_connect()  # Function to get DB connection
-         cursor = conn.cursor()
-         
-         query = """
-         SELECT cust_name, identification, pref_phone,pref_email,congregation 
-         from MEMBERS 
-         WHERE membership_number = %s
-         """
-         cursor.execute(query, (self.cmemberid.data,))
- 
-         result = cursor.fetchone()
-         if result:
-             self.cname.data = result[0]  
-             self.ccustno.data = result[1]  
-             self.cphone.data = result[2]  
-             self.cemail.data = result[3] 
-             self.ccongr.data = result[4]              
- 
-         cursor.close()
-         conn.close()
- 
- 
- 
- 
- 
- 
+    cmemberid = StringField('Search Input (ID / Phone / Email / Member No)',
+                            validators=[DataRequired(), Length(min=2, max=100)])
+
+    csearchresult = StringField('MEMBER_NUMBER',
+                                validators=[Length(max=100)], render_kw={"readonly": True})
+
+    cname = StringField('CUSTOMER',
+                        validators=[Length(max=200)], render_kw={"readonly": True})
+
+    ccustno = StringField('CUSTOMER_ID',
+                          validators=[Length(max=200)], render_kw={"readonly": True})
+
+    cphone = StringField('PHONE_NUMBER',
+                         validators=[Length(max=200)], render_kw={"readonly": True})
+
+    cemail = StringField('CUSTOMER_EMAIL',
+                         validators=[Length(max=200)], render_kw={"readonly": True})
+
+    ccongr = StringField('CONGREGATION',
+                         validators=[Length(max=200)], render_kw={"readonly": True})
+        
  
         
 class editRTDForm(FlaskForm):

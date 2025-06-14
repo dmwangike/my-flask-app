@@ -292,40 +292,41 @@ def get_edit_kyc_details_logic():
         
 # Function fill cust query
 def get_cust_details_logic():
-    cmemberid = request.form.get('cmemberid')
-    
-    # Validate input
-    if not cmemberid or not cmemberid.isalnum():
-        return jsonify({'error': 'Invalid unique ID provided'}), 400
-    
+    cmemberid = request.form.get('cmemberid', '').strip()
+
+    if not cmemberid:
+        return jsonify({'error': 'Invalid search input'}), 400
+
     try:
-        # Database connection and query execution
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
                 query = """
-                    SELECT cust_name, identification, pref_phone,pref_email,congregation 
-                    from MEMBERS
-                    WHERE membership_number = %s;
+                    SELECT membership_number, cust_name, identification, pref_phone, pref_email, congregation
+                    FROM MEMBERS
+                    WHERE membership_number ILIKE %s
+                       OR identification ILIKE %s
+                       OR pref_phone ILIKE %s
+                       OR pref_email ILIKE %s
+                    LIMIT 1;
                 """
-                cursor.execute(query, (cmemberid,))
+                value = f"%{cmemberid}%"
+                cursor.execute(query, (value, value, value, value))
                 result = cursor.fetchone()
-        
-        # Handle results
+
         if result:
             return jsonify({
-                'cname': result[0],
-                'ccustno': result[1],
-                'cphone': result[2],
-                'cemail': result[3],
-                'ccongr': result[4],
+                'membership_number': result[0],
+                'cname': result[1],
+                'ccustno': result[2],
+                'cphone': result[3],
+                'cemail': result[4],
+                'ccongr': result[5],
             })
         else:
-            return jsonify({'error': 'No data found for the given unique ID'}), 404
-    
+            return jsonify({'error': 'No data found for the given input'}), 404
+
     except Exception as e:
-        # Log the exception (not shown here) and return a server error response
-        return jsonify({'error': 'An error occurred while processing your request'}), 500        
-                
+        return jsonify({'error': 'An error occurred while processing your request'}), 500
 
 
 # Update Customer Bank Details

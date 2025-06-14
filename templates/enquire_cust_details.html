@@ -1,139 +1,80 @@
 {% extends "layout.html" %}
 {% block content %}
-    <div class="content-section">
-        <form method="POST" action="{{ url_for('enquire_cust_details') }}">
-            {{ form.hidden_tag() }}
-            <fieldset class="form-group">
-                <legend class="border-bottom mb-4">Enquire Member KYC Details</legend>
+<div class="content-section">
+    <form method="POST" action="{{ url_for('enquire_cust_details') }}">
+        {{ form.hidden_tag() }}
+        <fieldset class="form-group">
+            <legend class="border-bottom mb-4">Enquire Member Details</legend>
 
-                <div class="form-group">
-                    {{ form.cmemberid.label(class="form-control-label") }}
-                    {% if form.cmemberid.errors %}
-                        {{ form.cmemberid(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.cmemberid.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.cmemberid(class="form-control form-control-lg") }}
-                    {% endif %}
-                </div>
+            <div class="form-group">
+                {{ form.cmemberid.label(class="form-control-label") }}
+                {{ form.cmemberid(class="form-control form-control-lg") }}
+            </div>
 
-                <div class="form-group">
-                    {{ form.cname.label(class="form-control-label") }}
-                    {% if form.cname.errors %}
-                        {{ form.cname(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.cname.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.cname(class="form-control form-control-lg", readonly=True) }}
-                    {% endif %}
-                </div>
+            <div class="form-group">
+                {{ form.csearchresult.label(class="form-control-label") }}
+                {{ form.csearchresult(class="form-control form-control-lg", readonly=True) }}
+            </div>
 
-                <div class="form-group">
-                    {{ form.ccustno.label(class="form-control-label") }}
-                    {% if form.ccustno.errors %}
-                        {{ form.ccustno(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.ccustno.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.ccustno(class="form-control form-control-lg", readonly=True) }}
-                    {% endif %}
-                </div>
+            <div class="form-group">
+                {{ form.cname.label(class="form-control-label") }}
+                {{ form.cname(class="form-control form-control-lg", readonly=True) }}
+            </div>
 
+            <div class="form-group">
+                {{ form.ccustno.label(class="form-control-label") }}
+                {{ form.ccustno(class="form-control form-control-lg", readonly=True) }}
+            </div>
 
-                <div class="form-group">
-                    {{ form.cphone.label(class="form-control-label") }}
-                    {% if form.cphone.errors %}
-                        {{ form.cphone(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.cphone.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.cphone(class="form-control form-control-lg", readonly=True) }}
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    {{ form.cemail.label(class="form-control-label") }}
-                    {% if form.cemail.errors %}
-                        {{ form.cemail(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.cemail.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.cemail(class="form-control form-control-lg", readonly=True) }}
-                    {% endif %}
-                </div>
-                <div class="form-group">
-                    {{ form.ccongr.label(class="form-control-label") }}
-                    {% if form.ccongr.errors %}
-                        {{ form.ccongr(class="form-control form-control-lg is-invalid") }}
-                        <div class="invalid-feedback">
-                            {% for error in form.ccongr.errors %}
-                                <span>{{ error }}</span>
-                            {% endfor %}
-                        </div>
-                    {% else %}
-                        {{ form.ccongr(class="form-control form-control-lg", readonly=True) }}
-                    {% endif %}
-                </div>
-                    <div class="form-group">
-				        <a href="{{ url_for('home') }}" class="btn btn-outline-success" style="width: 300px;">Return Home</a>
-    </div>
-            </fieldset>
-        </form>
-    </div>
-    <script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script> <!-- Updated jQuery -->
-    <script src="{{ url_for('static', filename='js/popper.min.js') }}"></script> <!-- Updated Popper.js -->
-    <script src="{{ url_for('static', filename='js/bootstrap.min.js') }}"></script> <!-- Updated Bootstrap JS -->
+            <div class="form-group">
+                {{ form.cphone.label(class="form-control-label") }}
+                {{ form.cphone(class="form-control form-control-lg", readonly=True) }}
+            </div>
 
+            <div class="form-group">
+                {{ form.cemail.label(class="form-control-label") }}
+                {{ form.cemail(class="form-control form-control-lg", readonly=True) }}
+            </div>
+
+            <div class="form-group">
+                {{ form.ccongr.label(class="form-control-label") }}
+                {{ form.ccongr(class="form-control form-control-lg", readonly=True) }}
+            </div>
+
+            <div class="form-group">
+                <a href="{{ url_for('home') }}" class="btn btn-outline-success" style="width: 300px;">Return Home</a>
+            </div>
+        </fieldset>
+    </form>
+</div>
+
+<script src="{{ url_for('static', filename='js/jquery-3.5.1.min.js') }}"></script>
 <script>
-    // When the cmemberid field loses focus (via tab or enter), trigger the AJAX request
-    $('#{{ form.cmemberid.id }}').on('blur', function() {
-        var cmemberid = $(this).val();
+    $('#{{ form.cmemberid.id }}').on('blur', function () {
+        var cmemberid = $(this).val().trim();
 
-        // Make sure the cmemberid is not empty
         if (cmemberid) {
             $.ajax({
-                url: '/get_cust_details',  //
+                url: '/get_cust_details',
                 method: 'POST',
-                data: { cmemberid: cmemberid },  // Send cmemberid as form data
-                success: function(response) {
-
-                    // Populate the cname field
+                data: { cmemberid: cmemberid },
+                success: function (response) {
+                    $('#{{ form.csearchresult.id }}').val(response.membership_number);
                     $('#{{ form.cname.id }}').val(response.cname);
-
-                    // Populate the ccustno field
                     $('#{{ form.ccustno.id }}').val(response.ccustno);
-
-                    // Populate the cphone field
                     $('#{{ form.cphone.id }}').val(response.cphone);
-
-                    // Populate the cemail field
                     $('#{{ form.cemail.id }}').val(response.cemail);
-
-                    // Populate the ccongr field
                     $('#{{ form.ccongr.id }}').val(response.ccongr);
-
-
                 },
-                error: function() {
-                    alert('Error retrieving Customer details');
+                error: function (xhr) {
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        alert(xhr.responseJSON.error);
+                    } else {
+                        alert('Error retrieving customer details.');
+                    }
                 }
             });
         }
     });
 </script>
-
 {% endblock content %}
