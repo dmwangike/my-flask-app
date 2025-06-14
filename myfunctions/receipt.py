@@ -186,26 +186,18 @@ def generate_receipt(customer):
 
 def receipt_customer():
     try:
-        conn = get_db_connection()
-        if conn:
-            with conn.cursor() as cursor:
-                cursor.execute("CALL update_tran_date();")
-            conn.commit()
+        customers = fetch_customers()
+        if not customers:
+            logging.debug("No customers found or error fetching data.")
+            flash('No valid customers to receipt', 'success')
+            return redirect(url_for('home'))
+
+        for customer in customers:
+            generate_receipt(customer)
+
+        flash('Receipts generated and emailed successfully.', 'success')
     except Exception as e:
-        logging.error(f"Error executing update_tran_date procedure: {e}")
-        flash('Error updating transaction dates', 'danger')
-        return redirect(url_for('home'))
-    finally:
-        if conn:
-            conn.close()
-
-    customers = fetch_customers()
-    if not customers:
-        logging.debug("No customers found or error fetching data.")
-        flash('No valid customers to receipt', 'success')
-        return redirect(url_for('home'))
-
-    for customer in customers:
-        generate_receipt(customer)
-    flash('Receipts generated and emailed successfully. Please check spool location', 'success')
+        logging.error(f"Error generating receipts: {e}")
+        flash('Error generating receipts', 'danger')
     return redirect(url_for('home'))
+
