@@ -48,7 +48,6 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import inch
-#from myfunctions.localpkg import generate_statements_logic,create_date_folder,create_bank_statement_revised
 from extensions import mail
 from io import BytesIO
 from reportlab.lib.utils import ImageReader
@@ -839,7 +838,7 @@ def generate_statement():
                T.amount, T.running_balance, T.trxid
         FROM transactions T
         JOIN portfolio P ON T.account_number = P.account_no
-        WHERE account_type = 'Savings' AND P.membership_number = %s AND T.amount <> 0
+        WHERE account_type = 'Deposits' AND P.membership_number = %s AND T.amount <> 0
         ORDER BY trxid
     """, (member_number,))
     transactions = cur.fetchall()

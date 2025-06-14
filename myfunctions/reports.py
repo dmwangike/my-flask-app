@@ -113,6 +113,7 @@ def audit_report_logic():
 
 
 def all_members_report_logic():
+    current_date = datetime.today().date() 
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=RealDictCursor)  # Use RealDictCursor for dictionary-like access
 
@@ -148,7 +149,7 @@ def all_members_report_logic():
     output.seek(0)  # Rewind the buffer to the beginning
 
     # Generate filename with current date suffix
-    filename = f"7D_Audit_Report_{current_date}.xlsx"
+    filename = f"All_Members_Report_{current_date}.xlsx"
 
     # Close the cursor and connection
     cursor.close()
