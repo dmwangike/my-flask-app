@@ -508,7 +508,9 @@ class cusdLONForm(FlaskForm):
                               validators=[DataRequired(), Length(min=2, max=200)], render_kw={"readonly": True})
      lonact = StringField('LOAN_ACCT',
                               validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
-     lonamt = StringField('LOAN_AMOUNT',
+     lonorg = StringField('BORROWED_AMOUNT',
+                              validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True})
+     lonamt = StringField('CURRENT_AMOUNT',
                               validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
      depact = StringField('DEPOSIT_ACCT',
                               validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
@@ -530,7 +532,8 @@ class cusdLONForm(FlaskForm):
         COALESCE(b.loan_account, 'None') AS loan_account,
         COALESCE(b.pending_amount, 0) AS loan,
         COALESCE(c.interest_account, 'None') AS interest_account,
-        COALESCE(c.interest_due, 0) AS interest
+        COALESCE(c.interest_due, 0) AS interest,
+        b.amount_borrowed AS ORIGINAL_LOAN
     FROM portfolio a JOIN MEMBERS m on m.membership_number =  a.membership_number
     LEFT OUTER JOIN loan_accounts b 
         ON b.member_number = a.membership_number AND b.pending_amount <> 0
@@ -546,6 +549,7 @@ class cusdLONForm(FlaskForm):
              self.depact.data = result[1]  
              self.depamt.data = result[2]  
              self.lonact.data = result[3] 
+             self.lonorg.data = result[7]              
              self.lonamt.data = result[4]              
              self.intact.data = result[5] 
              self.intamt.data = result[6] 
