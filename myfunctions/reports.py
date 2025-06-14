@@ -112,4 +112,47 @@ def audit_report_logic():
     return send_file(output, download_name=filename, as_attachment=True)  
 
 
+def all_members_report_logic():
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)  # Use RealDictCursor for dictionary-like access
 
+    # Query to generate the report
+    query = """
+    SELECT m.membership_number, cust_name, a.account_no AS deposit_account,
+        a.balance AS deposits,COALESCE(b.loan_account, 'None') AS loan_account,
+	COALESCE(b.amount_borrowed,0) AS ORIGINAL_LOAN,
+        COALESCE(b.pending_amount, 0) AS loan_balance,
+        COALESCE(c.interest_account, 'None') AS interest_account,
+        COALESCE(c.interest_due, 0) AS interest_due
+    FROM portfolio a JOIN MEMBERS m on m.membership_number =  a.membership_number
+    LEFT OUTER JOIN loan_accounts b 
+        ON b.member_number = a.membership_number AND b.pending_amount <> 0
+    LEFT OUTER JOIN interest_accounts c 
+        ON c.membership_number = a.membership_number AND c.interest_due <> 0
+    WHERE a.account_type = 'Deposits'
+	order by membership_number;
+    """
+    
+    # Fetch the data for the report
+    cursor.execute(query)
+    data = cursor.fetchall()
+
+    # Convert the result to a Pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Save the DataFrame to an in-memory Excel file
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='All_Members_Report')
+
+    output.seek(0)  # Rewind the buffer to the beginning
+
+    # Generate filename with current date suffix
+    filename = f"7D_Audit_Report_{current_date}.xlsx"
+
+    # Close the cursor and connection
+    cursor.close()
+    conn.close()
+
+    # Send the file as an attachment for download
+    return send_file(output, download_name=filename, as_attachment=True)  
