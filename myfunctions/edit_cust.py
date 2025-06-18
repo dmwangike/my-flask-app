@@ -917,27 +917,87 @@ def loan_form_logic():
             cur.execute("UPDATE internal_accounts SET balance = balance + %s WHERE account_number = '1006'", (disbursed_amount,))
             cur.execute("UPDATE internal_accounts SET balance = balance - %s WHERE account_number = '1007'", (amount_borrowed,))
             # Create loan schedule
-            def end_of_month(year, month):
-                day = calendar.monthrange(year, month)[1]
-                return datetime(year, month, day).date()
-
-            instalment_amount = round(amount_borrowed / loan_tenure, 2)
-            current_month = disbursement_date.month
-            current_year = disbursement_date.year
-
-            for i in range(loan_tenure):
-                month = current_month + i
-                year = current_year + (month - 1) // 12
-                month = (month - 1) % 12 + 1
-                due_date = end_of_month(year, month)
-                cur.execute("""
-                    INSERT INTO loan_schedules (
-                        instalment_number, instalment_amount, membership_number,
-                        loan_account,pending_instalment, due_date
-                    )
-                    VALUES (%s, %s, %s, %s, %s, %s)
-                """, (i + 1, instalment_amount, member_number, loan_account,instalment_amount, due_date))
-
+            def generate_repayment_schedule(memberno, loan_acct,principal, annual_interest_rate, duration_months):
+                current_date   =        datetime.today()
+            
+                monthly_rate = annual_interest_rate / 12 / 100
+                emi = (principal * monthly_rate * (1 + monthly_rate) ** duration_months) / \
+                      ((1 + monthly_rate) ** duration_months - 1)
+            
+                schedule = []
+                balance = principal
+            
+                # Calculate first due date (last day of current month)
+                year = current_date.year
+                month = current_date.month
+                first_due_day = calendar.monthrange(year, month)[1]
+                due_date = datetime(year, month, first_due_day)
+            
+                for i in range(duration_months):
+                    interest = balance * monthly_rate
+                    principal_component = emi - interest
+                    balance -= principal_component
+                    balance = max(0, round(balance, 2))  # Prevent negative rounding
+            
+                    schedule.append({
+                        'MemberNO': memberno,
+                        'Loan_acct':loan_acct,
+                        'Month': i + 1,
+                        'Due Date': due_date.strftime("%Y-%m-%d"),
+                        'EMI': round(emi, 2),
+                        'Interest': round(interest, 2),
+                        'Principal': round(principal_component, 2),
+                        'Balance': balance,
+                        'status': 'Not Due',
+                        'Pending': round(emi, 2)
+                    })
+            
+                    # Move to last day of next month
+                    if due_date.month == 12:
+                        next_year, next_month = due_date.year + 1, 1
+                    else:
+                        next_year, next_month = due_date.year, due_date.month + 1
+                    last_day = calendar.monthrange(next_year, next_month)[1]
+                    due_date = datetime(next_year, next_month, last_day)
+            
+                return schedule
+            
+            
+            
+            def insert_dataframe_to_postgres(df, table_name, columns):
+            
+                # Prepare the SQL INSERT query
+                placeholders = ', '.join(['%s'] * len(columns))
+                column_names = ', '.join(columns)
+                insert_query = f"INSERT INTO {table_name} ({column_names}) VALUES ({placeholders})"
+            
+                try:
+                    conn = get_db_connection()
+                    cursor = conn.cursor()
+            
+                    # Create a list of tuples from the DataFrame values for the specified columns
+                    data_tuples = [tuple(row[col] for col in columns) for index, row in df.iterrows()]
+            
+                    # Execute batch insert
+                    cursor.executemany(insert_query, data_tuples)
+                    conn.commit()
+                    print("Data inserted successfully.")
+            
+                except Exception as e:
+                    print("Error inserting data:", e)
+                    if conn:
+                        conn.rollback()
+                finally:
+                    if cursor:
+                        cursor.close()
+                    if conn:
+                        conn.close()
+            
+            df = pd.DataFrame(generate_repayment_schedule(member_number,loan_account, amount_borrowed,15, loan_tenure))
+            
+            columns_to_insert = ['membership_number','loan_account','instalment_number','due_date','instalment_amount', 'interest','principal','balance','status', 'pending_instalment']
+            
+            insert_dataframe_to_postgres(df, 'loan_schedules', columns_to_insert)
             # Finalize
             conn.commit()
             flash("Loan disbursed successfully with repayment schedule!", "success")
