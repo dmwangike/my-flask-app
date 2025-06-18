@@ -958,16 +958,18 @@ def loan_form_logic():
                     balance = max(Decimal(0), safe_round(balance)) # Prevent negative rounding
             
                     schedule.append({
-                        'MemberNO': memberno,
-                        'Loan_acct':loan_acct,
-                        'Month': i + 1,
-                        'Due Date': due_date.strftime("%Y-%m-%d"),
-                        'EMI': round(emi, 2),
-                        'Interest': round(interest, 2),
-                        'Principal': round(principal_component, 2),
-                        'Balance': balance,
+                        'membership_number': memberno,
+                        'loan_accountt':loan_acct,
+                        'instalment_number': i + 1,
+                        'due_date': due_date.strftime("%Y-%m-%d"),
+                        'instalment_amount': round(emi, 2),
+                        'interest': round(interest, 2),
+                        'principal': round(principal_component, 2),
+                        'balance': balance,
                         'status': 'Not Due',
-                        'Pending': round(emi, 2)
+                        'pending_instalment': round(emi, 2)
+                                 
+                        
                     })
             
                     # Move to last day of next month
