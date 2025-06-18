@@ -28,7 +28,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 from datetime import datetime, timedelta
 import calendar
-
+from decimal import Decimal, getcontext
 import re
 
 from openpyxl import load_workbook
@@ -919,8 +919,14 @@ def loan_form_logic():
             # Create loan schedule
             def generate_repayment_schedule(memberno, loan_acct,principal, annual_interest_rate, duration_months):
                 current_date   =        datetime.today()
+                getcontext().prec = 2
+                
+                principal = Decimal(principal)
+                annual_interest_rate = Decimal(annual_interest_rate)
+                duration_months = int(duration_months)
+                
             
-                monthly_rate = annual_interest_rate / 12 / 100
+                monthly_rate = annual_interest_rate / Decimal(12) / Decimal(100)
                 emi = (principal * monthly_rate * (1 + monthly_rate) ** duration_months) / \
                       ((1 + monthly_rate) ** duration_months - 1)
             
