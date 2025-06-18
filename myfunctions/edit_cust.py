@@ -28,7 +28,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 from datetime import datetime, timedelta
 import calendar
-from decimal import Decimal, getcontext, ROUND_HALF_UP
+from decimal import Decimal, getcontext, ROUND_HALF_UP, InvalidOperation
 import re
 
 from openpyxl import load_workbook
@@ -932,6 +932,18 @@ def loan_form_logic():
             
                 schedule = []
                 balance = principal
+            
+                def safe_round(value):
+		    try:
+		        value = Decimal(value)
+		        return value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+		    except (InvalidOperation, TypeError, ValueError):
+                        return Decimal('0.00') 
+            
+            
+            
+            
+            
             
                 # Calculate first due date (last day of current month)
                 year = current_date.year
