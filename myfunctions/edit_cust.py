@@ -919,7 +919,7 @@ def loan_form_logic():
             # Create loan schedule
             def generate_repayment_schedule(memberno, loan_acct,principal, annual_interest_rate, duration_months):
                 current_date   =        datetime.today()
-                getcontext().prec = 2
+                getcontext().prec = 6
                 
                 principal = Decimal(principal)
                 annual_interest_rate = Decimal(annual_interest_rate)
