@@ -943,7 +943,7 @@ def loan_form_logic():
                     interest = balance * monthly_rate
                     principal_component = emi - interest
                     balance -= principal_component
-                    balance = max(Decimal(0), balance.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)) # Prevent negative rounding
+                    balance = max(Decimal(0), safe_round(balance)) # Prevent negative rounding
             
                     schedule.append({
                         'MemberNO': memberno,
