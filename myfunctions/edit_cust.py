@@ -959,7 +959,7 @@ def loan_form_logic():
             
                     schedule.append({
                         'membership_number': memberno,
-                        'loan_accountt':loan_acct,
+                        'loan_account':loan_acct,
                         'instalment_number': i + 1,
                         'due_date': due_date.strftime("%Y-%m-%d"),
                         'instalment_amount': round(emi, 2),
