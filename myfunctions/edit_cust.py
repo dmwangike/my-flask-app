@@ -28,7 +28,7 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 from datetime import datetime, timedelta
 import calendar
-from decimal import Decimal, getcontext
+from decimal import Decimal, getcontext, ROUND_HALF_UP
 import re
 
 from openpyxl import load_workbook
@@ -943,7 +943,7 @@ def loan_form_logic():
                     interest = balance * monthly_rate
                     principal_component = emi - interest
                     balance -= principal_component
-                    balance = max(0, round(balance, 2))  # Prevent negative rounding
+                    balance = max(Decimal(0), balance.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)) # Prevent negative rounding
             
                     schedule.append({
                         'MemberNO': memberno,
