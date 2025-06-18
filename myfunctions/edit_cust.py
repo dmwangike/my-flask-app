@@ -934,10 +934,10 @@ def loan_form_logic():
                 balance = principal
             
                 def safe_round(value):
-		    try:
-		        value = Decimal(value)
-		        return value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-		    except (InvalidOperation, TypeError, ValueError):
+                    try:
+                        value = Decimal(value)
+                        return value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
+                    except (InvalidOperation, TypeError, ValueError):
                         return Decimal('0.00') 
             
             
