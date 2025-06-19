@@ -916,34 +916,17 @@ def loan_form_logic():
             cur.execute("UPDATE internal_accounts SET balance = balance + %s WHERE account_number = '1001'", (amount_borrowed,))
             cur.execute("UPDATE internal_accounts SET balance = balance + %s WHERE account_number = '1006'", (disbursed_amount,))
             cur.execute("UPDATE internal_accounts SET balance = balance - %s WHERE account_number = '1007'", (amount_borrowed,))
+            
             # Create loan schedule
             def generate_repayment_schedule(memberno, loan_acct,principal, annual_interest_rate, duration_months):
                 current_date   =        datetime.today()
-                getcontext().prec = 6
-                
-                principal = Decimal(principal)
-                annual_interest_rate = Decimal(annual_interest_rate)
-                duration_months = int(duration_months)
-                
             
-                monthly_rate = annual_interest_rate / Decimal(12) / Decimal(100)
+                monthly_rate = annual_interest_rate / 12 / 100
                 emi = (principal * monthly_rate * (1 + monthly_rate) ** duration_months) / \
                       ((1 + monthly_rate) ** duration_months - 1)
             
                 schedule = []
                 balance = principal
-            
-                def safe_round(value):
-                    try:
-                        value = Decimal(value)
-                        return value.quantize(Decimal('0.01'), rounding=ROUND_HALF_UP)
-                    except (InvalidOperation, TypeError, ValueError):
-                        return Decimal('0.00') 
-            
-            
-            
-            
-            
             
                 # Calculate first due date (last day of current month)
                 year = current_date.year
@@ -955,7 +938,7 @@ def loan_form_logic():
                     interest = balance * monthly_rate
                     principal_component = emi - interest
                     balance -= principal_component
-                    balance = max(Decimal(0), safe_round(balance)) # Prevent negative rounding
+                    balance = max(0, round(balance, 2))  # Prevent negative rounding
             
                     schedule.append({
                         'membership_number': memberno,
@@ -967,9 +950,7 @@ def loan_form_logic():
                         'principal': round(principal_component, 2),
                         'balance': balance,
                         'status': 'Not Due',
-                        'pending_instalment': round(emi, 2)
-                                 
-                        
+                        'pending_instalment': round(emi, 2)            
                     })
             
                     # Move to last day of next month
@@ -981,7 +962,7 @@ def loan_form_logic():
                     due_date = datetime(next_year, next_month, last_day)
             
                 return schedule
-            
+
             
             
             def insert_dataframe_to_postgres(df, table_name, columns):
