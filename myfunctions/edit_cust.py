@@ -920,8 +920,10 @@ def loan_form_logic():
             # Create loan schedule
             def generate_repayment_schedule(memberno, loan_acct,principal, annual_interest_rate, duration_months):
                 current_date   =        datetime.today()
-            
-                monthly_rate = annual_interest_rate / 12 / 100
+                
+                principal = Decimal(principal)
+                annual_interest_rate = Decimal(annual_interest_rate)
+                monthly_rate = annual_interest_rate / Decimal(12 * 100)
                 emi = (principal * monthly_rate * (1 + monthly_rate) ** duration_months) / \
                       ((1 + monthly_rate) ** duration_months - 1)
             
