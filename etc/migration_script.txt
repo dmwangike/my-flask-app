@@ -1,0 +1,86 @@
+
+import pandas as pd
+from decimal import Decimal
+import psycopg2
+import logging
+
+
+def migrate_transactions_from_excel(file_path):
+    df = pd.read_excel(file_path)
+    df = df.dropna(subset=['membership_number', 'amount', 'narrative', 'trans_date'])
+
+    conn = get_db_connection()
+    conn.autocommit = False
+    cursor = conn.cursor()
+    successes, failures = 0, 0
+
+    for index, row in df.iterrows():
+        try:
+            cust_membid = str(row['membership_number']).strip()
+            cust_tranid = str(row['narrative']).strip()
+            cust_amount = Decimal(row['amount'])
+            cust_mgr = "MIGRATION"
+            client_ip = "127.0.0.1"
+            trans_date = pd.to_datetime(row['trans_date']).to_pydatetime()
+
+            # Step 1: Get portfolio and internal accounts
+            cust_query = """
+                SELECT a.balance AS cust_bal, a.account_no AS cust_acct,
+                       b.balance AS int_bal, b.account_number AS int_acct
+                FROM portfolio a
+                JOIN internal_accounts b ON b.account_number = '1006'
+                WHERE a.membership_number = %s AND account_type = 'Savings';
+            """
+            cursor.execute(cust_query, (cust_membid,))
+            existing_trx = cursor.fetchone()
+
+            if not existing_trx:
+                logging.warning(f'Member {cust_membid} not found.')
+                failures += 1
+                continue
+
+            prev_balance = Decimal(existing_trx[0])
+            cust_acct = str(existing_trx[1])
+            prev_int_bal = Decimal(existing_trx[2])
+            int_acct = str(existing_trx[3])
+            new_bal = prev_balance + cust_amount
+            int_new_bal = prev_int_bal - cust_amount
+
+            # Step 2: Check for duplicate
+            cursor.execute("""
+                SELECT 1 FROM transactions
+                WHERE account_number = %s AND narrative = %s AND amount = %s
+                AND entered_by = %s AND ipaddr = %s
+                LIMIT 1
+            """, (cust_acct, cust_tranid, cust_amount, cust_mgr, client_ip))
+            if cursor.fetchone():
+                logging.info(f'Duplicate transaction skipped for member {cust_membid}.')
+                continue
+
+            # Step 3: Update balances
+            cursor.execute("UPDATE portfolio SET balance = %s WHERE account_no = %s", (new_bal, cust_acct))
+            cursor.execute("UPDATE internal_accounts SET balance = %s WHERE account_number = %s", (int_new_bal, int_acct))
+
+            # Step 4: Insert transactions (with explicit posting_date)
+            trx_query = """
+                INSERT INTO transactions 
+                (account_number, narrative, amount, running_balance, posted, entered_by, ipaddr, trans_date)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """
+            cursor.execute(trx_query, (
+                cust_acct, cust_tranid, cust_amount, new_bal, "Y", cust_mgr, client_ip, trans_date
+            ))
+            cursor.execute(trx_query, (
+                int_acct, cust_tranid, -cust_amount, int_new_bal, "Y", cust_mgr, client_ip, trans_date
+            ))
+
+            conn.commit()
+            successes += 1
+        except Exception as e:
+            conn.rollback()
+            logging.exception(f"Error processing row {index} (Member: {row.get('membership_number')})")
+            failures += 1
+
+    cursor.close()
+    conn.close()
+    print(f"Migration complete: {successes} successful, {failures} failed.")
