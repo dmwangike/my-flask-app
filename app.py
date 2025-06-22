@@ -53,6 +53,11 @@ from io import BytesIO
 from reportlab.lib.utils import ImageReader
 from reportlab.platypus import Table, TableStyle
 
+from math import ceil
+
+
+
+
     
     
     
@@ -860,105 +865,104 @@ def generate_statement():
     cur.close()
     conn.close()
 
-    # Generate PDF
+    # PDF Generation
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
 
-    # Logo
     logo_path = "static/logo.png"
-    p.drawImage(ImageReader(logo_path), 40, height - 130, width=100, height=50, preserveAspectRatio=True, mask='auto')
+    transactions_per_page = 30
+    total_pages = ceil(len(transactions) / transactions_per_page) or 1
 
-    # Header
-    p.setFont("Helvetica-Bold", 14)
-    p.drawString(160, height - 100, "Member Statement")
-    p.setFont("Helvetica", 10)
-    p.drawString(160, height - 115, f"Date: {datetime.now().strftime('%Y-%m-%d')}")
+    def draw_header(page_num):
+        p.drawImage(ImageReader(logo_path), 40, height - 130, width=100, height=50, preserveAspectRatio=True, mask='auto')
+        p.setFont("Helvetica-Bold", 14)
+        p.drawString(160, height - 100, "Member Statement")
+        p.setFont("Helvetica", 10)
+        p.drawString(160, height - 115, f"Date: {datetime.now().strftime('%Y-%m-%d')}")
+        p.setFont("Helvetica", 10)
+        y = height - 150
+        p.drawString(40, y, f"Member #: {header[0] or ''}")
+        p.drawString(240, y, f"Name: {header[1] or ''}")
+        y -= 15
+        p.drawString(40, y, f"Phone: {header[2] or ''}")
+        p.drawString(240, y, f"Congregation: {header[3] or ''}")
+        p.setFont("Helvetica-Bold", 11)
+        y -= 30
+        p.drawString(40, y, "Transactions:")
+        return y - 20
 
-    y = height - 150
-    p.setFont("Helvetica", 10)
-    p.drawString(40, y, f"Member #: {header[0] or ''}")
-    p.drawString(240, y, f"Name: {header[1] or ''}")
-    y -= 15
-    p.drawString(40, y, f"Phone: {header[2] or ''}")
-    p.drawString(240, y, f"Congregation: {header[3] or ''}")
-
-    # Transactions Table
-    y -= 30
-    p.setFont("Helvetica-Bold", 11)
-    p.drawString(40, y, "Transactions:")
-    y -= 20
+    def draw_footer(page_num):
+        p.setFont("Helvetica-Oblique", 9)
+        p.drawString(270, 30, f"Page {page_num} of {total_pages}")
+        p.setFont("Helvetica-BoldOblique", 11)
+        p.drawString(230, 15, "GROWING TOGETHER")
 
     if not transactions:
+        y = draw_header(1)
         p.setFont("Helvetica", 9)
         p.drawString(50, y, "No transactions available.")
-        y -= 20
+        draw_footer(1)
+        p.showPage()
     else:
-        data = [["DATE", "NARRATION", "AMOUNT", "BALANCE"]]
-        for t in transactions:
-            row = [
-                t[2].strftime('%Y-%m-%d') if t[2] else "",
-                t[3] or "",
-                f"{t[4]:,.2f}" if t[4] is not None else "0.00",
-                f"{t[5]:,.2f}" if t[5] is not None else "0.00"    
-                   
-            ]
-            data.append(row)
+        for page in range(total_pages):
+            y = draw_header(page + 1)
+            data = [["DATE", "NARRATION", "AMOUNT", "BALANCE"]]
+            for t in transactions[page * transactions_per_page : (page + 1) * transactions_per_page]:
+                row = [
+                    t[2].strftime('%Y-%m-%d') if t[2] else "",
+                    t[3] or "",
+                    f"{t[4]:,.2f}" if t[4] is not None else "0.00",
+                    f"{t[5]:,.2f}" if t[5] is not None else "0.00"
+                ]
+                data.append(row)
 
-        table = Table(data, colWidths=[80, 230, 90, 90])
-        table.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-            ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
-            ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 5),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ]))
-        table.wrapOn(p, width - 80, height)
-        table.drawOn(p, 40, y - (len(data) * 18))
+            table = Table(data, colWidths=[80, 230, 90, 90])
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+                ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
+                ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
+                ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                ("TOPPADDING", (0, 0), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ]))
+            table.wrapOn(p, width - 80, height)
+            table.drawOn(p, 40, y - (len(data) * 18))
 
-        y = y - (len(data) * 18) - 30
+            y = y - (len(data) * 18) - 30
 
-    # Summary Table
-    p.setFont("Helvetica-Bold", 11)
-    p.drawString(40, y, "Summary:")
-    y -= 20
+            if page == total_pages - 1:
+                p.setFont("Helvetica-Bold", 11)
+                p.drawString(40, y, "Summary:")
+                y -= 20
+                if not summary:
+                    p.setFont("Helvetica", 9)
+                    p.drawString(50, y, "No summary data available.")
+                else:
+                    sdata = [["ACCOUNT_TYPE", "ACCOUNT_NO", "BALANCE"]]
+                    for s in summary:
+                        sdata.append([
+                            s[1] or "",
+                            s[2] or "",
+                            f"{s[3]:,.2f}" if s[3] else ""
+                        ])
+                    stable = Table(sdata, colWidths=[150, 180, 100])
+                    stable.setStyle(TableStyle([
+                        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
+                        ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
+                        ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
+                        ("LEFTPADDING", (0, 0), (-1, -1), 5),
+                        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
+                        ("TOPPADDING", (0, 0), (-1, -1), 3),
+                        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+                    ]))
+                    stable.wrapOn(p, width - 80, height)
+                    stable.drawOn(p, 40, y - (len(sdata) * 18))
 
-    if not summary:
-        p.setFont("Helvetica", 9)
-        p.drawString(50, y, "No summary data available.")
-        y -= 20
-    else:
-        sdata = [["ACCOUNT_TYPE", "ACCOUNT_NO", "BALANCE"]]
-        for s in summary:
-            row = [
-                s[1] or "",
-                s[2] or "",
-                f"{s[3]:,.2f}" if s[3] else ""
-            ]
-            sdata.append(row)
+            draw_footer(page + 1)
+            p.showPage()
 
-        stable = Table(sdata, colWidths=[150, 180, 100])
-        stable.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-            ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
-            ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
-            ("LEFTPADDING", (0, 0), (-1, -1), 5),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 5),
-            ("TOPPADDING", (0, 0), (-1, -1), 3),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-        ]))
-        stable.wrapOn(p, width - 80, height)
-        stable.drawOn(p, 40, y - (len(sdata) * 18))
-
-        y = y - (len(sdata) * 18) - 30
-
-    # Footer
-    p.setFont("Helvetica-BoldOblique", 11)
-    p.drawString(230, 30, "GROWING TOGETHER")
-
-    p.showPage()
     p.save()
     buffer.seek(0)
 
