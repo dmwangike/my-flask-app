@@ -839,7 +839,7 @@ def generate_statement():
 
     # Transactions
     cur.execute("""
-        SELECT P.membership_number, T.account_number, T.trans_date::DATE, T.narrative,
+        SELECT P.membership_number, T.account_number, T.trans_date::DATE, substring(T.narrative,1,35) as narrative,
                T.amount, T.running_balance, T.trxid
         FROM transactions T
         JOIN portfolio P ON T.account_number = P.account_no

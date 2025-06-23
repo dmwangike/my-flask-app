@@ -349,3 +349,7 @@ AFTER INSERT ON transactions
 FOR EACH ROW
 EXECUTE FUNCTION handle_transaction_insert();
 
+
+ALTER TABLE transactions
+ADD CONSTRAINT unique_trx_entry UNIQUE (account_number, narrative, amount, entered_by, ipaddr);
+
