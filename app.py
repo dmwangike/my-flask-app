@@ -848,20 +848,6 @@ def generate_statement():
     """, (member_number,))
     transactions = cur.fetchall()
 
-    # Summary
-    cur.execute("""
-        SELECT membership_number, account_type, ACCOUNT_NO, BALANCE FROM portfolio 
-        WHERE account_type = 'Deposits' AND membership_number = %s
-        UNION
-        SELECT MEMBER_NUMBER, 'Loans', LOAN_ACCOUNT, PENDING_AMOUNT FROM LOAN_ACCOUNTS 
-        WHERE PENDING_AMOUNT <> 0 AND MEMBER_NUMBER = %s
-        UNION
-        SELECT MEMBERSHIP_NUMBER, 'Interest Due', INTEREST_ACCOUNT, INTEREST_DUE 
-        FROM INTEREST_ACCOUNTS 
-        WHERE INTEREST_DUE <> 0 AND MEMBERSHIP_NUMBER = %s
-    """, (member_number, member_number, member_number))
-    summary = cur.fetchall()
-
     cur.close()
     conn.close()
 
@@ -930,36 +916,6 @@ def generate_statement():
             table.wrapOn(p, width - 80, height)
             table.drawOn(p, 40, y - (len(data) * 18))
 
-            y = y - (len(data) * 18) - 30
-
-            if page == total_pages - 1:
-                p.setFont("Helvetica-Bold", 11)
-                p.drawString(40, y, "Summary:")
-                y -= 20
-                if not summary:
-                    p.setFont("Helvetica", 9)
-                    p.drawString(50, y, "No summary data available.")
-                else:
-                    sdata = [["ACCOUNT_TYPE", "ACCOUNT_NO", "BALANCE"]]
-                    for s in summary:
-                        sdata.append([
-                            s[1] or "",
-                            s[2] or "",
-                            f"{s[3]:,.2f}" if s[3] else ""
-                        ])
-                    stable = Table(sdata, colWidths=[150, 180, 100])
-                    stable.setStyle(TableStyle([
-                        ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-                        ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
-                        ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
-                        ("LEFTPADDING", (0, 0), (-1, -1), 5),
-                        ("RIGHTPADDING", (0, 0), (-1, -1), 5),
-                        ("TOPPADDING", (0, 0), (-1, -1), 3),
-                        ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
-                    ]))
-                    stable.wrapOn(p, width - 80, height)
-                    stable.drawOn(p, 40, y - (len(sdata) * 18))
-
             draw_footer(page + 1)
             p.showPage()
 
@@ -985,6 +941,7 @@ def generate_statement():
     return redirect(url_for('home'))
 
 
+
 def generate_and_email_statement(member_number):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -1001,7 +958,7 @@ def generate_and_email_statement(member_number):
         return f"Member {member_number} not found."
 
     cur.execute("""
-        SELECT P.membership_number, T.account_number, T.trans_date::DATE, T.narrative,
+        SELECT P.membership_number, T.account_number, T.trans_date::DATE, SUBSTRING(T.narrative,1,35) AS narrative,
                T.amount, T.running_balance, T.trxid
         FROM transactions T
         JOIN portfolio P ON T.account_number = P.account_no
@@ -1010,23 +967,10 @@ def generate_and_email_statement(member_number):
     """, (member_number,))
     transactions = cur.fetchall()
 
-    cur.execute("""
-        SELECT membership_number, account_type, ACCOUNT_NO, BALANCE FROM portfolio 
-        WHERE account_type = 'Deposits' AND membership_number = %s
-        UNION
-        SELECT MEMBER_NUMBER, 'Loans', LOAN_ACCOUNT, PENDING_AMOUNT FROM LOAN_ACCOUNTS 
-        WHERE PENDING_AMOUNT <> 0 AND MEMBER_NUMBER = %s
-        UNION
-        SELECT MEMBERSHIP_NUMBER, 'Interest Due', INTEREST_ACCOUNT, INTEREST_DUE 
-        FROM INTEREST_ACCOUNTS 
-        WHERE INTEREST_DUE <> 0 AND MEMBERSHIP_NUMBER = %s
-    """, (member_number, member_number, member_number))
-    summary = cur.fetchall()
-
     cur.close()
     conn.close()
 
-    # --- Generate PDF (same code as before, using `header`, `transactions`, `summary`) ---
+    # --- Generate PDF (using `header` and `transactions` only) ---
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
@@ -1075,27 +1019,6 @@ def generate_and_email_statement(member_number):
         table.drawOn(p, 40, y - (len(data) * 18))
         y -= (len(data) * 18) + 30
 
-    p.setFont("Helvetica-Bold", 11)
-    p.drawString(40, y, "Summary:")
-    y -= 20
-
-    if not summary:
-        p.setFont("Helvetica", 9)
-        p.drawString(50, y, "No summary data available.")
-        y -= 20
-    else:
-        sdata = [["ACCOUNT_TYPE", "ACCOUNT_NO", "BALANCE"]]
-        for s in summary:
-            sdata.append([s[1], s[2], f"{s[3]:,.2f}" if s[3] else ""])
-        stable = Table(sdata, colWidths=[150, 180, 100])
-        stable.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
-            ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
-            ("ALIGN", (2, 1), (-1, -1), "RIGHT"),
-        ]))
-        stable.wrapOn(p, width - 80, height)
-        stable.drawOn(p, 40, y - (len(sdata) * 18))
-
     p.setFont("Helvetica-BoldOblique", 11)
     p.drawString(230, 30, "GROWING TOGETHER")
 
@@ -1117,6 +1040,7 @@ def generate_and_email_statement(member_number):
         return f"Sent to {header[4] or '[no email]'}"
     except Exception as e:
         return f"Failed to send to {header[4] or '[no email]'}: {str(e)}"
+
 
 @app.route('/generate_all_statements', methods=['GET'])
 def generate_all_statements():
