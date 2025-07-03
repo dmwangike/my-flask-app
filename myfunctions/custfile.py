@@ -254,7 +254,7 @@ def display_mini_statement_logic():
     cursor = conn.cursor()
 
     query = """
-        SELECT c.membership_number, cust_name, trans_date, substring(narrative,1,35) as narrative, amount, running_balance
+        SELECT c.membership_number, cust_name, trans_date, substring(narrative,1,36) as narrative, amount, running_balance
         FROM transactions a
         JOIN Portfolio b ON a.account_number = b.account_no AND account_type = 'Deposits'
         JOIN MEMBERS c ON c.membership_number = b.membership_number
