@@ -256,7 +256,7 @@ def display_mini_statement_logic():
     query = """
         SELECT c.membership_number, cust_name, trans_date, narrative, amount, running_balance
         FROM transactions a
-        JOIN Portfolio b ON a.account_number = b.account_no AND account_type = 'Savings'
+        JOIN Portfolio b ON a.account_number = b.account_no AND account_type = 'Deposits'
         JOIN MEMBERS c ON c.membership_number = b.membership_number
         WHERE c.membership_number = %s AND a.amount <> 0
         ORDER BY trxid DESC
