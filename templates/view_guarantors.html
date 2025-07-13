@@ -66,9 +66,9 @@ document.getElementById('member_number').addEventListener('blur', function () {
         }
 
         document.getElementById('member_name').value = data.cust_name;
-        document.getElementById('member_loan').value = data.cust_name;
-        document.getElementById('amount_borrowed').value = data.cust_name;
-        document.getElementById('amount_pending').value = data.cust_name;
+        document.getElementById('member_loan').value = data.loan_acct;
+        document.getElementById('amount_borrowed').value = data.amount_borrowed;
+        document.getElementById('amount_pending').value = data.pending_amount;
         const tbody = document.querySelector('#beneficiaries_table tbody');
         tbody.innerHTML = '';
 
