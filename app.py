@@ -17,7 +17,7 @@ from myfunctions.custfile import enrich_cust_details_logic, capture_cust,get_db_
 
 from myfunctions.receipt import receipt_customer
 from myfunctions.reports import  audit_report_logic,all_members_report_logic
-from myfunctions.edit_cust import amend_cust_contacts_logic,get_amend_cust_contact_logic,edit_bnk_details_logic,get_edit_bnk_details_logic,get_edit_kyc_details_logic,edit_kyc_details_logic,add_related_party_logic,get_edit_related_party_logic,edit_related_party_logic,fetch_member_logic,fetch_party_logic,view_party_logic,assign_beneficiary_allocations_logic,fetch_guarantor_name_logic,fetch_member_balance_logic,loan_form_logic,get_cust_details_logic,update_loan_status_logic, get_loan_details_logic
+from myfunctions.edit_cust import amend_cust_contacts_logic,get_amend_cust_contact_logic,edit_bnk_details_logic,get_edit_bnk_details_logic,get_edit_kyc_details_logic,edit_kyc_details_logic,add_related_party_logic,get_edit_related_party_logic,edit_related_party_logic,fetch_member_logic,fetch_party_logic,view_party_logic,assign_beneficiary_allocations_logic,fetch_guarantor_name_logic,fetch_member_balance_logic,loan_form_logic,get_cust_details_logic,update_loan_status_logic, get_loan_details_logic,fetch_guarantors_logic,view_guarantors_logic
 from sqlalchemy import create_engine
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, BooleanField,PasswordField,validators,FloatField,DateField, SelectField
@@ -538,6 +538,20 @@ def fetch_party():
 @login_required
 def view_party():
     return view_party_logic()
+    
+    
+    
+#Fetch Guarantors details
+@app.route("/fetch_guarantors", methods=["POST"])
+@login_required 
+def fetch_guarantors():
+    return fetch_guarantors_logic()
+
+#View Guarantors details    
+@app.route('/view_guarantors', methods=['GET', 'POST'])
+@login_required
+def view_guarantors():
+    return view_guarantors_logic()
     
 @app.route("/assign_beneficiary_allocations", methods=['GET','POST'])
 @login_required 

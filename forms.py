@@ -474,7 +474,13 @@ class addRTDForm(FlaskForm):
         conn.close()
         
         
-        
+class GuarantorViewForm(FlaskForm):
+    member_number = StringField('MEMBER_NUMBER', validators=[DataRequired()])
+    member_name = StringField('MEMBER_NAME', render_kw={"readonly": True})
+    member_loan = StringField('MEMBER_LOAN', render_kw={"readonly": True})
+    amount_borrowed = StringField('AMOUNT_BORROWED', render_kw={"readonly": True})
+    amount_pending = StringField('AMOUNT_PENDING', render_kw={"readonly": True})    
+    submit = SubmitField('Submit')          
         
         
 class cusdLONForm(FlaskForm):
