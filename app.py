@@ -74,7 +74,7 @@ app.config['MAIL_USE_TLS'] = True
 app.config['MAIL_USE_SSL'] = False
 app.config['MAIL_USERNAME'] = 'dangawalla@gmail.com' 
 app.config['MAIL_PASSWORD'] = 'wehu dunc xfys aknp'
-app.config['MAIL_DEFAULT_SENDER'] = 'noreply@demo.com'
+app.config['MAIL_DEFAULT_SENDER'] = 'dangawalla@gmail.com'
 
 
 # Initialize mail with app
