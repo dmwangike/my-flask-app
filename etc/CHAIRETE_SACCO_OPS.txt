@@ -353,3 +353,39 @@ EXECUTE FUNCTION handle_transaction_insert();
 ALTER TABLE transactions
 ADD CONSTRAINT unique_trx_entry UNIQUE (account_number, narrative, amount, entered_by, ipaddr);
 
+
+
+
+--BACKEND MEMBER CREATION
+
+select * from portfolio where membership_number in (
+
+select membership_number from members where member_id in (269,
+270,
+271,
+272,
+273,
+274,
+275,
+276
+));
+
+
+insert into  members (member_id, membership_number, cust_name, pref_phone, pref_email, created_by, date_modified,
+modified_by, congregation)
+values (276,'M0276','Gideon Kieya Thairu','254722894893','test@generic.com','MIGRATION',date_trunc('day', NOW()),'MIGRATION','Macedonia');
+
+select member_id, membership_number, cust_name, pref_phone, pref_email, created_by, date_modified,
+modified_by, congregation 
+
+
+insert into portfolio(customer_id, account_no, balance, open_date, membership_number, account_type)
+values (276,'M0276_SV', 0,date_trunc('day', NOW()),'M0276','Savings');
+insert into portfolio(customer_id, account_no, balance, open_date, membership_number, account_type)
+values (276,'M0276_DT', 0,date_trunc('day', NOW()),'M0276','Deposits');
+
+
+
+
+
+
