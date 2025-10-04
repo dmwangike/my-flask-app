@@ -39,6 +39,7 @@ python-dateutil==2.9.0.post0
 pytz==2025.2
 qrcode==8.2
 reportlab==4.4.1
+resend
 requests==2.32.3
 setuptools==80.8.0
 six==1.17.0

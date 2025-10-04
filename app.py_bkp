@@ -27,7 +27,7 @@ from flask_login import login_user, current_user, logout_user, login_required,Us
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager 
-#from flask_mail import Mail,Message 
+from flask_mail import Mail,Message 
 import jwt 
 import smtplib  
 from markupsafe import Markup,escape 
@@ -69,19 +69,17 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
-
-resend.api_key = os.getenv("RESEND_API_KEY")
-#app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-#app.config['MAIL_PORT'] = 587
-#app.config['MAIL_USE_TLS'] = True
-#app.config['MAIL_USE_SSL'] = False
-#app.config['MAIL_USERNAME'] = 'dangawalla@gmail.com' 
-#app.config['MAIL_PASSWORD'] = 'wehu dunc xfys aknp'
-#app.config['MAIL_DEFAULT_SENDER'] = 'dangawalla@gmail.com'
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USE_SSL'] = False
+app.config['MAIL_USERNAME'] = 'dangawalla@gmail.com' 
+app.config['MAIL_PASSWORD'] = 'wehu dunc xfys aknp'
+app.config['MAIL_DEFAULT_SENDER'] = 'dangawalla@gmail.com'
 
 
 # Initialize mail with app
-#mail.init_app(app)
+mail.init_app(app)
 
 # Import after defining mail
 from myfunctions.welcome import MembershipLetterGenerator
@@ -167,39 +165,6 @@ def log_event(message):
     """Append a log message to the log file."""
     with open(LOG_FILE, 'a') as log_file:
         log_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
-        
-        
-        
-# FUNCTION TO USE RESEND FOR EMAIL
-def send_email_resend(to, subject, body, attachments=None, cc=None, sender="PCEA CHAIRETE <onboarding@resend.dev>"):
-    """
-    Send email using Resend API.
-    to: list or string (recipient email)
-    attachments: list of dicts [{"filename": ..., "content": ..., "type": ...}]
-    """
-    if isinstance(to, str):
-        to = [to]
-    if cc and isinstance(cc, str):
-        cc = [cc]
-
-    try:
-        params = {
-            "from": sender,
-            "to": to,
-            "cc": cc or [],
-            "subject": subject,
-            "text": body,
-        }
-        if attachments:
-            params["attachments"] = attachments
-
-        email = resend.Emails.send(params)
-        print(f"Email sent successfully: {email}")
-        return True
-    except Exception as e:
-        print(f"Error sending email via Resend: {e}")
-        return False
-
         
 
 
@@ -293,7 +258,7 @@ def account():
 
 
 # Initialize Flask-Mail
-#mail = Mail()
+mail = Mail()
 
 def send_reset_email(user):
     token = user.get_reset_token()
@@ -302,28 +267,37 @@ def send_reset_email(user):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    cursor.execute("SELECT email FROM USERS WHERE id = %s", (user.id,))
+    # Query to get the customer email
+    query = "SELECT email FROM USERS WHERE  id = %s"
+    cursor.execute(query, (user.id,))
     result = cursor.fetchone()
     cust_email = result[0]
     logging.debug(f"Sending email to: {cust_email}") 
+    # Create the message
+    msg = Message('Password Reset Request',
+                  sender='noreply@demo.com',
+                  recipients= [cust_email])
+    msg.body = f'''To reset your password, visit the following link:
+{url_for('reset_token', token=token, _external=True)}
 
-    reset_link = url_for('reset_token', token=token, _external=True)
-    body = f'''To reset your password, visit the following link:
-    {reset_link}
+If you did not make this request, simply ignore this email and no changes will be made.
+'''
 
-    If you did not make this request, simply ignore this email.
-    '''
     try:
-        send_email_resend(
-            to=cust_email,
-            subject="Password Reset Request",
-            body=body,
-            sender="PCEA CHAIRETE <onboarding@resend.dev>"
-        )
+        # Send the email
+        mail.send(msg)
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"SMTP Authentication Error: {e}")
+        # Handle authentication error (e.g., wrong password or blocked by Google)
+        raise
     except Exception as e:
-        print(f"Error sending email via Resend: {e}")
+        print(f"Error sending email: {e}")
         raise
 
+
+
+
+   
     
     
 @app.route("/reset_password", methods=['GET', 'POST'])
@@ -966,31 +940,15 @@ def generate_statement():
     # Email
     recipients = [header[4]] if header[4] else []
     cc_list = ['dmwangike@yahoo.com']
+    msg = Message(subject="Member Statement",
+                  sender="noreply@example.com",
+                  recipients=recipients or cc_list,
+                  cc=cc_list,
+                  body=f"Attached is the member statement for {header[1]} ({header[0]}).")
+    msg.attach(f"{member_number}_statement.pdf", "application/pdf", buffer.read())
 
-
-    attachment = {
-        "filename": f"{member_number}_statement.pdf",
-        "content": buffer.getvalue(),  # bytes
-        "type": "application/pdf"
-    }
-
-    send_email_resend(
-        to=recipients or cc_list,
-        cc=cc_list,
-        subject="Member Statement",
-        body=f"Attached is the member statement for {header[1]} ({header[0]}).",
-        attachments=[attachment],
-        sender="PCEA CHAIRETE <onboarding@resend.dev>"
-    )
-
-
-
-
-
-
-
-
-
+    try:
+        mail.send(msg)
         flash(f"Statement emailed to {header[4] or '[no member email]'}, CCed to dmwangike@yahoo.com", "success")
     except Exception as e:
         flash(f"Failed to send to member, but CCed to dmwangike@yahoo.com. Error: {str(e)}", "warning")
@@ -1085,26 +1043,15 @@ def generate_and_email_statement(member_number):
 
     recipients = [header[4]] if header[4] else []
     cc_list = ['dmwangike@yahoo.com']
+    msg = Message(subject="Member Statement",
+                  sender="noreply@example.com",
+                  recipients=recipients or cc_list,
+                  cc=cc_list,
+                  body=f"Attached is the member statement for {header[1]} ({header[0]}).")
+    msg.attach(f"{member_number}_statement.pdf", "application/pdf", buffer.read())
 
-    attachment = {
-        "filename": f"{member_number}_statement.pdf",
-        "content": buffer.getvalue(),  # bytes
-        "type": "application/pdf"
-    }
-
-    send_email_resend(
-        to=recipients or cc_list,
-        cc=cc_list,
-        subject="Member Statement",
-        body=f"Attached is the member statement for {header[1]} ({header[0]}).",
-        attachments=[attachment],
-        sender="PCEA CHAIRETE <onboarding@resend.dev>"
-    )
-
-
-
-
-
+    try:
+        mail.send(msg)
         return f"Sent to {header[4] or '[no email]'}"
     except Exception as e:
         return f"Failed to send to {header[4] or '[no email]'}: {str(e)}"
