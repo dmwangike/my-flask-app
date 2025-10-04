@@ -57,6 +57,9 @@ from reportlab.platypus import Table, TableStyle
 from math import ceil
 
 
+import base64
+
+
 ## Resend email key --re_G3P6BkBr_Ca7U1LF8cFsz6MsyUYSiSi7h
 
     
@@ -858,6 +861,8 @@ class ResetPasswordForm(FlaskForm):
 
 
 
+
+
 @app.route('/generate_statement', methods=['POST'])
 def generate_statement():
     member_number = request.form.get('member_number')
@@ -868,7 +873,7 @@ def generate_statement():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Header Info
+    # --- Fetch header info ---
     cur.execute("""
         SELECT membership_number, cust_name, pref_phone, congregation, pref_email
         FROM MEMBERS WHERE membership_number = %s
@@ -878,9 +883,10 @@ def generate_statement():
         flash(f'Member {member_number} not found.', 'danger')
         return redirect(url_for('home'))
 
-    # Transactions
+    # --- Fetch transactions ---
     cur.execute("""
-        SELECT P.membership_number, T.account_number, T.trans_date::DATE, substring(T.narrative,1,35) as narrative,
+        SELECT P.membership_number, T.account_number, T.trans_date::DATE, 
+               SUBSTRING(T.narrative,1,35) AS narrative,
                T.amount, T.running_balance, T.trxid
         FROM transactions T
         JOIN portfolio P ON T.account_number = P.account_no
@@ -892,11 +898,10 @@ def generate_statement():
     cur.close()
     conn.close()
 
-    # PDF Generation
+    # --- PDF Generation ---
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
-
     logo_path = "static/logo.png"
     transactions_per_page = 30
     total_pages = ceil(len(transactions) / transactions_per_page) or 1
@@ -957,39 +962,42 @@ def generate_statement():
             ]))
             table.wrapOn(p, width - 80, height)
             table.drawOn(p, 40, y - (len(data) * 18))
-
             draw_footer(page + 1)
             p.showPage()
 
     p.save()
     buffer.seek(0)
 
-    # Email sending wrapped in try/except
+    # --- Email Sending ---
     try:
         recipients = [header[4]] if header[4] else []
         cc_list = ['dmwangike@yahoo.com']
 
-        attachment = {
+        # Encode the PDF in Base64
+        pdf_bytes = buffer.getvalue()
+        encoded_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+
+        attachment = [{
             "filename": f"{member_number}_statement.pdf",
-            "content": buffer.getvalue(),  # bytes
+            "content": encoded_pdf,
             "type": "application/pdf"
-        }
+        }]
 
         send_email_resend(
             to=recipients or cc_list,
             cc=cc_list,
             subject="Member Statement",
             body=f"Attached is the member statement for {header[1]} ({header[0]}).",
-            attachments=[attachment],
+            attachments=attachment,
             sender="PCEA CHAIRETE <onboarding@resend.dev>"
         )
 
         flash(f"Statement emailed to {header[4] or '[no member email]'}, CCed to dmwangike@yahoo.com", "success")
+
     except Exception as e:
         flash(f"Failed to send to member, but CCed to dmwangike@yahoo.com. Error: {str(e)}", "warning")
 
     return redirect(url_for('home'))
-
 
 
 def generate_and_email_statement(member_number):
