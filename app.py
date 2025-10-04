@@ -902,7 +902,8 @@ def generate_statement():
     total_pages = ceil(len(transactions) / transactions_per_page) or 1
 
     def draw_header(page_num):
-        p.drawImage(ImageReader(logo_path), 40, height - 130, width=100, height=50, preserveAspectRatio=True, mask='auto')
+        p.drawImage(ImageReader(logo_path), 40, height - 130, width=100, height=50,
+                    preserveAspectRatio=True, mask='auto')
         p.setFont("Helvetica-Bold", 14)
         p.drawString(160, height - 100, "Member Statement")
         p.setFont("Helvetica", 10)
@@ -935,7 +936,7 @@ def generate_statement():
         for page in range(total_pages):
             y = draw_header(page + 1)
             data = [["DATE", "NARRATION", "AMOUNT", "BALANCE"]]
-            for t in transactions[page * transactions_per_page : (page + 1) * transactions_per_page]:
+            for t in transactions[page * transactions_per_page:(page + 1) * transactions_per_page]:
                 row = [
                     t[2].strftime('%Y-%m-%d') if t[2] else "",
                     t[3] or "",
@@ -963,33 +964,25 @@ def generate_statement():
     p.save()
     buffer.seek(0)
 
-    # Email
-    recipients = [header[4]] if header[4] else []
-    cc_list = ['dmwangike@yahoo.com']
+    # Email sending wrapped in try/except
+    try:
+        recipients = [header[4]] if header[4] else []
+        cc_list = ['dmwangike@yahoo.com']
 
+        attachment = {
+            "filename": f"{member_number}_statement.pdf",
+            "content": buffer.getvalue(),  # bytes
+            "type": "application/pdf"
+        }
 
-    attachment = {
-        "filename": f"{member_number}_statement.pdf",
-        "content": buffer.getvalue(),  # bytes
-        "type": "application/pdf"
-    }
-
-    send_email_resend(
-        to=recipients or cc_list,
-        cc=cc_list,
-        subject="Member Statement",
-        body=f"Attached is the member statement for {header[1]} ({header[0]}).",
-        attachments=[attachment],
-        sender="PCEA CHAIRETE <onboarding@resend.dev>"
-    )
-
-
-
-
-
-
-
-
+        send_email_resend(
+            to=recipients or cc_list,
+            cc=cc_list,
+            subject="Member Statement",
+            body=f"Attached is the member statement for {header[1]} ({header[0]}).",
+            attachments=[attachment],
+            sender="PCEA CHAIRETE <onboarding@resend.dev>"
+        )
 
         flash(f"Statement emailed to {header[4] or '[no member email]'}, CCed to dmwangike@yahoo.com", "success")
     except Exception as e:
