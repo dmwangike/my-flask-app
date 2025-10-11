@@ -1111,6 +1111,9 @@ def get_loan_details_logic():
         with get_db_connection() as conn:
             with conn.cursor() as cursor:
                 query = """
+WITH prince as (select SUM(principal)*-1 pending_amt,membership_number  
+from loan_schedules 
+where status = 'Due'  and membership_number = %s group by membership_number)
                         SELECT 
         cust_name,
         a.account_no AS deposit_account,
@@ -1119,15 +1122,18 @@ def get_loan_details_logic():
         COALESCE(b.pending_amount, 0) AS loan,
         COALESCE(c.interest_account, 'None') AS interest_account,
         COALESCE(c.interest_due, 0) AS interest,
-        COALESCE(b.amount_borrowed,0) AS ORIGINAL_LOAN
+        COALESCE(b.amount_borrowed,0) AS ORIGINAL_LOAN,
+		coalesce(p.pending_amt,0) as pending_principal,
+		coalesce(p.pending_amt,0) + COALESCE(c.interest_due, 0) pending_instalment
     FROM portfolio a JOIN MEMBERS m on m.membership_number =  a.membership_number
     LEFT OUTER JOIN loan_accounts b 
         ON b.member_number = a.membership_number AND b.pending_amount <> 0
     LEFT OUTER JOIN interest_accounts c 
         ON c.membership_number = a.membership_number AND c.interest_due <> 0
-    WHERE a.account_type = 'Deposits' and a.membership_number  = %s;
+	LEFT OUTER JOIN PRINCE p  on m.membership_number =  p.membership_number
+    WHERE a.account_type = 'Deposits' and a.membership_number = %s;
                 """
-                cursor.execute(query, (cmemberid,))
+                cursor.execute(query, (cmemberid,cmemberid,))
                 result = cursor.fetchone()
         
         # Handle results
@@ -1139,8 +1145,9 @@ def get_loan_details_logic():
                 'lonact': result[3],
                 'lonorg': result[7],
                 'lonamt': result[4],
-                'intact': result[5],
+                'intact': result[8],
                 'intamt': result[6],
+                'instamt': result[9],                
             })
         else:
             return jsonify({'error': 'No data found for the given unique ID'}), 404

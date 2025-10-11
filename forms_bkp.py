@@ -499,21 +499,16 @@ class cusdLONForm(FlaskForm):
                               validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
      depamt = StringField('DEPOSIT_AMOUNT',
                               validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True})   
-     intact = StringField('PRINCIPAL_INST',
+     intact = StringField('INTEREST_ACCT',
                               validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True}) 
-     intamt = StringField('INTEREST_INST',
+     intamt = StringField('INTEREST_AMOUNT',
                               validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True})   
-     instamt = StringField('TOTAL_INST',
-                              validators=[DataRequired(), Length(min=1, max=200)], render_kw={"readonly": True})
      def populate_cust(self):
          conn = get_db_connect()  # Function to get DB connection
          cursor = conn.cursor()
          
          query = """
-WITH prince as (select SUM(principal)*-1 pending_amt,membership_number  
-from loan_schedules 
-where status = 'Due'  and membership_number = %s group by membership_number)
-                        SELECT 
+    SELECT 
         cust_name,
         a.account_no AS deposit_account,
         a.balance AS deposits,
@@ -521,18 +516,15 @@ where status = 'Due'  and membership_number = %s group by membership_number)
         COALESCE(b.pending_amount, 0) AS loan,
         COALESCE(c.interest_account, 'None') AS interest_account,
         COALESCE(c.interest_due, 0) AS interest,
-        COALESCE(b.amount_borrowed,0) AS ORIGINAL_LOAN,
-		coalesce(p.pending_amt,0) as pending_principal,
-		coalesce(p.pending_amt,0) + COALESCE(c.interest_due, 0) pending_instalment
+        b.amount_borrowed AS ORIGINAL_LOAN
     FROM portfolio a JOIN MEMBERS m on m.membership_number =  a.membership_number
     LEFT OUTER JOIN loan_accounts b 
         ON b.member_number = a.membership_number AND b.pending_amount <> 0
     LEFT OUTER JOIN interest_accounts c 
         ON c.membership_number = a.membership_number AND c.interest_due <> 0
-	LEFT OUTER JOIN PRINCE p  on m.membership_number =  p.membership_number
     WHERE a.account_type = 'Deposits' and a.membership_number = %s
          """
-         cursor.execute(query, (self.cmemberid.data,self.cmemberid.data,))
+         cursor.execute(query, (self.cmemberid.data,))
  
          result = cursor.fetchone()
          if result:
@@ -542,9 +534,8 @@ where status = 'Due'  and membership_number = %s group by membership_number)
              self.lonact.data = result[3] 
              self.lonorg.data = result[7]              
              self.lonamt.data = result[4]              
-             self.intact.data = result[8] 
+             self.intact.data = result[5] 
              self.intamt.data = result[6] 
-             self.instamt.data = result[9] 
          cursor.close()
          conn.close()
  

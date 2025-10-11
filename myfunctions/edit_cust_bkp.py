@@ -667,7 +667,68 @@ def view_party_logic():
 
     return render_template('view_party.html', form=form)
     
+def fetch_guarantors_logic():
+    member_number = request.json.get('member_number')
+
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    cur.execute("""
+     select a.membership_number, b.cust_name,loan_acct,d.amount_borrowed,pending_amount,  guarantor_number,c.cust_name as guarantor_name, amount_guaranteed from guarantors a
+     join members b on a.membership_number = b.membership_number
+     join members c on a.guarantor_number = c.membership_number
+     join loan_accounts d on d.loan_account = loan_acct
+     where pending_amount < 0 and  A.MEMBERSHIP_NUMBER = %s
+    """, (member_number,))
+
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    if not rows:
+        return jsonify({"error": "Member not found"}), 404
+
+    cust_name = rows[0]['cust_name']
+    loan_acct = rows[0]['loan_acct']
+    amount_borrowed = rows[0]['amount_borrowed']  
+    pending_amount = rows[0]['pending_amount']     
+    parties = [{"party_id": r["guarantor_number"], "party_name": r["guarantor_name"], "partyamt": r["amount_guaranteed"]} for r in rows]
+
+    return jsonify({"cust_name": cust_name,"loan_acct":loan_acct, "amount_borrowed": amount_borrowed,"pending_amount": pending_amount,  "parties": parties})   
     
+    
+def view_guarantors_logic():
+    form = GuarantorViewForm()
+
+    if form.validate_on_submit():
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cust_mgr = current_user.username
+        client_ip = request.remote_addr
+        for key in request.form:
+            if key.startswith('partyamt_'):
+                party_id = key.split('_')[1]
+                partyamt = request.form.get(key)
+                if partyamt:
+                    try:
+                        cur.execute("""
+                            UPDATE guarantors
+                            SET amount_guaranteed = %s
+                            WHERE guarantor_number = %s
+                        """, (float(partyamt), party_id))
+                        cur.execute(f"SET myapp.client_ip = '{client_ip}';")
+                        cur.execute(f"SET myapp.cust_mgr = '{cust_mgr}';")  
+                    except ValueError:
+                        continue
+
+        conn.commit()
+        cur.close()
+        conn.close()
+
+
+        return redirect(url_for('home'))
+
+    return render_template('view_guarantors.html', form=form)    
     
     
     

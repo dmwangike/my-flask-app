@@ -386,6 +386,12 @@ values (276,'M0276_DT', 0,date_trunc('day', NOW()),'M0276','Deposits');
 
 
 
+--DISPLACE THE DATE BY MINUS 1 MONTH
+UPDATE loan_schedules
+SET due_date = due_date - INTERVAL '1 month';
+
+
+
 
 
 
