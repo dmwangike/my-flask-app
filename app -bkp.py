@@ -27,7 +27,7 @@ from flask_login import login_user, current_user, logout_user, login_required,Us
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager 
-from flask_mail import Mail,Message 
+#from flask_mail import Mail,Message 
 import jwt 
 import smtplib  
 from markupsafe import Markup,escape 
@@ -57,6 +57,9 @@ from reportlab.platypus import Table, TableStyle
 from math import ceil
 
 
+import base64
+
+
 ## Resend email key --re_G3P6BkBr_Ca7U1LF8cFsz6MsyUYSiSi7h
 
     
@@ -69,17 +72,19 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message_category = 'info'
-app.config['MAIL_SERVER'] = 'smtp.gmail.com'
-app.config['MAIL_PORT'] = 587
-app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USERNAME'] = 'dangawalla@gmail.com' 
-app.config['MAIL_PASSWORD'] = 'wehu dunc xfys aknp'
-app.config['MAIL_DEFAULT_SENDER'] = 'dangawalla@gmail.com'
+
+resend.api_key = os.getenv("RESEND_API_KEY")
+#app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+#app.config['MAIL_PORT'] = 587
+#app.config['MAIL_USE_TLS'] = True
+#app.config['MAIL_USE_SSL'] = False
+#app.config['MAIL_USERNAME'] = 'dangawalla@gmail.com' 
+#app.config['MAIL_PASSWORD'] = 'wehu dunc xfys aknp'
+#app.config['MAIL_DEFAULT_SENDER'] = 'dangawalla@gmail.com'
 
 
 # Initialize mail with app
-mail.init_app(app)
+#mail.init_app(app)
 
 # Import after defining mail
 from myfunctions.welcome import MembershipLetterGenerator
@@ -165,6 +170,39 @@ def log_event(message):
     """Append a log message to the log file."""
     with open(LOG_FILE, 'a') as log_file:
         log_file.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')} - {message}\n")
+        
+        
+        
+# FUNCTION TO USE RESEND FOR EMAIL
+def send_email_resend(to, subject, body, attachments=None, cc=None, sender="PCEA CHAIRETE <onboarding@resend.dev>"):
+    """
+    Send email using Resend API.
+    to: list or string (recipient email)
+    attachments: list of dicts [{"filename": ..., "content": ..., "type": ...}]
+    """
+    if isinstance(to, str):
+        to = [to]
+    if cc and isinstance(cc, str):
+        cc = [cc]
+
+    try:
+        params = {
+            "from": sender,
+            "to": to,
+            "cc": cc or [],
+            "subject": subject,
+            "text": body,
+        }
+        if attachments:
+            params["attachments"] = attachments
+
+        email = resend.Emails.send(params)
+        print(f"Email sent successfully: {email}")
+        return True
+    except Exception as e:
+        print(f"Error sending email via Resend: {e}")
+        return False
+
         
 
 
@@ -258,7 +296,7 @@ def account():
 
 
 # Initialize Flask-Mail
-mail = Mail()
+#mail = Mail()
 
 def send_reset_email(user):
     token = user.get_reset_token()
@@ -267,37 +305,28 @@ def send_reset_email(user):
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Query to get the customer email
-    query = "SELECT email FROM USERS WHERE  id = %s"
-    cursor.execute(query, (user.id,))
+    cursor.execute("SELECT email FROM USERS WHERE id = %s", (user.id,))
     result = cursor.fetchone()
     cust_email = result[0]
     logging.debug(f"Sending email to: {cust_email}") 
-    # Create the message
-    msg = Message('Password Reset Request',
-                  sender='noreply@demo.com',
-                  recipients= [cust_email])
-    msg.body = f'''To reset your password, visit the following link:
-{url_for('reset_token', token=token, _external=True)}
 
-If you did not make this request, simply ignore this email and no changes will be made.
-'''
+    reset_link = url_for('reset_token', token=token, _external=True)
+    body = f'''To reset your password, visit the following link:
+    {reset_link}
 
+    If you did not make this request, simply ignore this email.
+    '''
     try:
-        # Send the email
-        mail.send(msg)
-    except smtplib.SMTPAuthenticationError as e:
-        print(f"SMTP Authentication Error: {e}")
-        # Handle authentication error (e.g., wrong password or blocked by Google)
-        raise
+        send_email_resend(
+            to=cust_email,
+            subject="Password Reset Request",
+            body=body,
+            sender="PCEA CHAIRETE <onboarding@resend.dev>"
+        )
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"Error sending email via Resend: {e}")
         raise
 
-
-
-
-   
     
     
 @app.route("/reset_password", methods=['GET', 'POST'])
@@ -832,6 +861,8 @@ class ResetPasswordForm(FlaskForm):
 
 
 
+
+
 @app.route('/generate_statement', methods=['POST'])
 def generate_statement():
     member_number = request.form.get('member_number')
@@ -842,7 +873,7 @@ def generate_statement():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    # Header Info
+    # --- Fetch header info ---
     cur.execute("""
         SELECT membership_number, cust_name, pref_phone, congregation, pref_email
         FROM MEMBERS WHERE membership_number = %s
@@ -852,9 +883,10 @@ def generate_statement():
         flash(f'Member {member_number} not found.', 'danger')
         return redirect(url_for('home'))
 
-    # Transactions
+    # --- Fetch transactions ---
     cur.execute("""
-        SELECT P.membership_number, T.account_number, T.trans_date::DATE, substring(T.narrative,1,35) as narrative,
+        SELECT P.membership_number, T.account_number, T.trans_date::DATE, 
+               SUBSTRING(T.narrative,1,35) AS narrative,
                T.amount, T.running_balance, T.trxid
         FROM transactions T
         JOIN portfolio P ON T.account_number = P.account_no
@@ -866,17 +898,17 @@ def generate_statement():
     cur.close()
     conn.close()
 
-    # PDF Generation
+    # --- PDF Generation ---
     buffer = BytesIO()
     p = canvas.Canvas(buffer, pagesize=A4)
     width, height = A4
-
     logo_path = "static/logo.png"
     transactions_per_page = 30
     total_pages = ceil(len(transactions) / transactions_per_page) or 1
 
     def draw_header(page_num):
-        p.drawImage(ImageReader(logo_path), 40, height - 130, width=100, height=50, preserveAspectRatio=True, mask='auto')
+        p.drawImage(ImageReader(logo_path), 40, height - 130, width=100, height=50,
+                    preserveAspectRatio=True, mask='auto')
         p.setFont("Helvetica-Bold", 14)
         p.drawString(160, height - 100, "Member Statement")
         p.setFont("Helvetica", 10)
@@ -909,7 +941,7 @@ def generate_statement():
         for page in range(total_pages):
             y = draw_header(page + 1)
             data = [["DATE", "NARRATION", "AMOUNT", "BALANCE"]]
-            for t in transactions[page * transactions_per_page : (page + 1) * transactions_per_page]:
+            for t in transactions[page * transactions_per_page:(page + 1) * transactions_per_page]:
                 row = [
                     t[2].strftime('%Y-%m-%d') if t[2] else "",
                     t[3] or "",
@@ -930,31 +962,42 @@ def generate_statement():
             ]))
             table.wrapOn(p, width - 80, height)
             table.drawOn(p, 40, y - (len(data) * 18))
-
             draw_footer(page + 1)
             p.showPage()
 
     p.save()
     buffer.seek(0)
 
-    # Email
-    recipients = [header[4]] if header[4] else []
-    cc_list = ['dmwangike@yahoo.com']
-    msg = Message(subject="Member Statement",
-                  sender="noreply@example.com",
-                  recipients=recipients or cc_list,
-                  cc=cc_list,
-                  body=f"Attached is the member statement for {header[1]} ({header[0]}).")
-    msg.attach(f"{member_number}_statement.pdf", "application/pdf", buffer.read())
-
+    # --- Email Sending ---
     try:
-        mail.send(msg)
+        recipients = [header[4]] if header[4] else []
+        cc_list = ['dmwangike@yahoo.com']
+
+        # Encode the PDF in Base64
+        pdf_bytes = buffer.getvalue()
+        encoded_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+
+        attachment = [{
+            "filename": f"{member_number}_statement.pdf",
+            "content": encoded_pdf,
+            "type": "application/pdf"
+        }]
+
+        send_email_resend(
+            to=recipients or cc_list,
+            cc=cc_list,
+            subject="Member Statement",
+            body=f"Attached is the member statement for {header[1]} ({header[0]}).",
+            attachments=attachment,
+            sender="PCEA CHAIRETE <onboarding@resend.dev>"
+        )
+
         flash(f"Statement emailed to {header[4] or '[no member email]'}, CCed to dmwangike@yahoo.com", "success")
+
     except Exception as e:
         flash(f"Failed to send to member, but CCed to dmwangike@yahoo.com. Error: {str(e)}", "warning")
 
     return redirect(url_for('home'))
-
 
 
 def generate_and_email_statement(member_number):
@@ -991,7 +1034,8 @@ def generate_and_email_statement(member_number):
     width, height = A4
 
     logo_path = "static/logo.png"
-    p.drawImage(ImageReader(logo_path), 40, height - 130, width=100, height=50, preserveAspectRatio=True, mask='auto')
+    p.drawImage(ImageReader(logo_path), 40, height - 130, width=100, height=50,
+                preserveAspectRatio=True, mask='auto')
     p.setFont("Helvetica-Bold", 14)
     p.drawString(160, height - 100, "Member Statement")
     p.setFont("Helvetica", 10)
@@ -1041,20 +1085,31 @@ def generate_and_email_statement(member_number):
     p.save()
     buffer.seek(0)
 
-    recipients = [header[4]] if header[4] else []
-    cc_list = ['dmwangike@yahoo.com']
-    msg = Message(subject="Member Statement",
-                  sender="noreply@example.com",
-                  recipients=recipients or cc_list,
-                  cc=cc_list,
-                  body=f"Attached is the member statement for {header[1]} ({header[0]}).")
-    msg.attach(f"{member_number}_statement.pdf", "application/pdf", buffer.read())
-
+    # --- Email Sending Section (with error handling) ---
     try:
-        mail.send(msg)
+        recipients = [header[4]] if header[4] else []
+        cc_list = ['dmwangike@yahoo.com']
+
+        attachment = {
+            "filename": f"{member_number}_statement.pdf",
+            "content": buffer.getvalue(),  # bytes
+            "type": "application/pdf"
+        }
+
+        send_email_resend(
+            to=recipients or cc_list,
+            cc=cc_list,
+            subject="Member Statement",
+            body=f"Attached is the member statement for {header[1]} ({header[0]}).",
+            attachments=[attachment],
+            sender="PCEA CHAIRETE <onboarding@resend.dev>"
+        )
+
         return f"Sent to {header[4] or '[no email]'}"
+
     except Exception as e:
         return f"Failed to send to {header[4] or '[no email]'}: {str(e)}"
+
 
 
 @app.route('/generate_all_statements', methods=['GET'])

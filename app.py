@@ -1090,6 +1090,11 @@ def generate_and_email_statement(member_number):
         recipients = [header[4]] if header[4] else []
         cc_list = ['dmwangike@yahoo.com']
 
+
+        # Encode the PDF in Base64
+        pdf_bytes = buffer.getvalue()
+        encoded_pdf = base64.b64encode(pdf_bytes).decode('utf-8')
+        
         attachment = {
             "filename": f"{member_number}_statement.pdf",
             "content": buffer.getvalue(),  # bytes
