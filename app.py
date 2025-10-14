@@ -1117,7 +1117,7 @@ def generate_and_email_statement(member_number):
 
 
 
-@app.route('/generate_all_statements', methods=['GET'])
+@app.route('/generate_all_statements', methods=['POST'])
 def generate_all_statements():
     conn = get_db_connection()
     cur = conn.cursor()
