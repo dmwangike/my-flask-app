@@ -1097,7 +1097,7 @@ def generate_and_email_statement(member_number):
         
         attachment = {
             "filename": f"{member_number}_statement.pdf",
-            "content": buffer.getvalue(),  # bytes
+            "content": encoded_pdf,
             "type": "application/pdf"
         }
 
@@ -1117,7 +1117,7 @@ def generate_and_email_statement(member_number):
 
 
 
-@app.route('/generate_all_statements', methods=['POST'])
+@app.route('/generate_all_statements', methods=['GET'])
 def generate_all_statements():
     conn = get_db_connection()
     cur = conn.cursor()
