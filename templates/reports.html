@@ -55,7 +55,7 @@
 		            <label for="member_number">Enter Acctount Number</label>
 		            <input type="text" name="Acct_number" class="form-control" placeholder="e.g., M00012_DT" required>
 		        </div>
-		        <button type="submit" name="action" value="email" formaction="{{ url_for('excel_statement') }}" class="btn btn-outline-success" style="width: 300px;">Excel Member Statement</button>
+		        <button type="submit" name="action" value="email" formaction="{{ url_for('generate_statement') }}" class="btn btn-outline-success" style="width: 300px;">Excel Member Statement</button>
 		    </form>
 </div>
     </div>
