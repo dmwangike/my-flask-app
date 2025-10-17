@@ -157,3 +157,42 @@ def all_members_report_logic():
 
     # Send the file as an attachment for download
     return send_file(output, download_name=filename, as_attachment=True)  
+    
+    
+def excel_statement_logic():
+    acct_number = request.form.get('acct_number')
+    if not acct_number:
+        flash('Account number is required', 'danger')
+        return redirect(url_for('home'))
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=RealDictCursor)  # Use RealDictCursor for dictionary-like access
+    
+    # Fetch the data for the report
+    cursor.execute("""
+       select cust_name,account_number,trans_date::date as trans_date,narrative,amount, running_balance  from transactions t join members m
+       on substring(t.account_number,1,5) = m.membership_number
+       where account_number = %s and amount <> 0
+       order by trxid
+    """, (acct_number,))
+    data = cursor.fetchall()
+
+    # Convert the result to a Pandas DataFrame
+    df = pd.DataFrame(data)
+
+    # Save the DataFrame to an in-memory Excel file
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Acct_Statement_Report')
+
+    output.seek(0)  # Rewind the buffer to the beginning
+
+    # Generate filename with current date suffix
+    filename = f"Acct_Statement_For_{acct_number}.xlsx"
+
+    # Close the cursor and connection
+    cursor.close()
+    conn.close()
+
+    # Send the file as an attachment for download
+    return send_file(output, download_name=filename, as_attachment=True)  
+

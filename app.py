@@ -16,7 +16,7 @@ from forms import  CMSForm,ReportsForm, CustDetailForm,EnrichForm,UpdateTRXForm,
 from myfunctions.custfile import enrich_cust_details_logic, capture_cust,get_db_connection,get_customer_name_logic,get_trx_details_logic,update_trx_details_logic,display_mini_statement_logic
 
 from myfunctions.receipt import receipt_customer
-from myfunctions.reports import  audit_report_logic,all_members_report_logic
+from myfunctions.reports import  audit_report_logic,all_members_report_logic,excel_statement_logic
 from myfunctions.edit_cust import amend_cust_contacts_logic,get_amend_cust_contact_logic,edit_bnk_details_logic,get_edit_bnk_details_logic,get_edit_kyc_details_logic,edit_kyc_details_logic,add_related_party_logic,get_edit_related_party_logic,edit_related_party_logic,fetch_member_logic,fetch_party_logic,view_party_logic,assign_beneficiary_allocations_logic,fetch_guarantor_name_logic,fetch_member_balance_logic,loan_form_logic,get_cust_details_logic,update_loan_status_logic, get_loan_details_logic,fetch_guarantors_logic,view_guarantors_logic
 from sqlalchemy import create_engine
 from flask_wtf import FlaskForm
@@ -655,6 +655,11 @@ def audit_report():
 @login_required
 def all_members_report():
     return all_members_report_logic()
+    
+@app.route('/excel_statement', methods=['GET', 'POST'])
+@login_required
+def excel_statement():
+    return excel_statement_logic()
     
 
 @app.route("/cust_address", methods=['GET', 'POST'])
